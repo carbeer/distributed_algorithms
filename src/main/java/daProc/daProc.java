@@ -1,8 +1,6 @@
 package daProc;
 import sun.misc.Signal;
 import java.io.IOException;
-import java.lang.ProcessBuilder;
-import java.util.logging.Logger;
 
 class daProc {
     // FROM C SKELETON (dunno for what it should be good?)
@@ -15,23 +13,6 @@ class daProc {
         
         waitForStart = 0;
         
-    }
-
-    static void stop(int signum) {
-                
-        //reset signal handlers to default
-        // FROM C SKELETON
-        //signal(SIGTERM, SIG_DFL);
-        //signal(SIGINT, SIG_DFL);
-
-        //immediately stop network packet processing
-        System.out.println("Immediately stopping network packet processing.\n");
-
-        //write/flush output file if necessary
-        System.out.println("Writing output.\n");
-
-        //exit directly from signal handler
-        //exit(0);
     }
 
 
