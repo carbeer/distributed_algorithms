@@ -23,7 +23,7 @@ public class Process {
 		
 		
 		this.id = id;
-		File membershipPath = new File(System.getProperty("user.dir") + "/src/main/java/daProc/membership.txt");
+		File membershipPath = new File(System.getProperty("user.dir") + "/src/main/java/daProc/" + membership + ".txt");
 		try {
 			String[] processParam = readMembership(membershipPath, id);
 			this.ip = processParam[1];
@@ -70,6 +70,7 @@ public class Process {
         } catch (IOException e) {
             e.printStackTrace();
         }
+		
 		return null;
 		
 	}
@@ -100,6 +101,11 @@ public class Process {
     
     public static void main(String []args) {
 
+    	int processId = Integer.valueOf(args[1]);
+    	String membership = args[2];
+    	Process process = new Process(processId, membership);
+    	
+    	
     	Signal.handle(new Signal("SIGINT"), new SignalHandler() {
             public void handle(Signal sig) {
                 System.out.println("Stopping network packet processing...\n");
