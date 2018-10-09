@@ -7,28 +7,18 @@ import java.util.logging.Logger;
 class daProc {
     // FROM C SKELETON (dunno for what it should be good?)
     static int waitForStart = 1;
-    static ProcessBuilder pb;
-    static Process p;
     //static final Signal USR1 = new Signal("SIG_USR1");
 
-    Logger logger = Logger.getLogger(daProc.class.getName());
+    
 
     static void start(int signum) {
-        logger.debug("Inside start method");
+        
         waitForStart = 0;
-        try {
-            p = pb.start(); // Creates actual process through ProcessBuilder
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
+        
     }
 
     static void stop(int signum) {
-        logger.debug("Inside stop method");
-        if (p.isAlive()) {
-            // Stop it
-        }
+                
         //reset signal handlers to default
         // FROM C SKELETON
         //signal(SIGTERM, SIG_DFL);
@@ -87,4 +77,6 @@ class daProc {
         }
         */
     }
+
+    
 }
