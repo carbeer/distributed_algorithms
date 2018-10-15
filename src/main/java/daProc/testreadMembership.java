@@ -17,10 +17,10 @@ public class testreadMembership {
 	
 
     public static void main(String []args) {
-    File membershipPath = new File(System.getProperty("user.dir") + "/src/main/java/daProc/membership.txt");
+    File membershipPath = new File(System.getProperty("user.dir") + "/src/test/java/daProc/membership.txt");
     int id = 2;
     String[] splited = {"error"};
-	
+
 	try {
 
         BufferedReader b = new BufferedReader(new FileReader(membershipPath));
@@ -39,7 +39,7 @@ public class testreadMembership {
     } catch (IOException e) {
         e.printStackTrace();
     }
-     
+
 	 System.out.println(Arrays.toString(splited));
 
     }
