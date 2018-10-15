@@ -1,13 +1,13 @@
 package daProc;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.util.ArrayList;
+
 import sun.misc.Signal;
 import sun.misc.SignalHandler;
- 
 
 public class Process {
 	
@@ -18,64 +18,124 @@ public class Process {
 	private String ip;
 	private int port;
 	private String outPath;
-	
+	private DatagramSocket socket;
+	private boolean crashed;
+	private int seqNumber;
+	private ArrayList<Peer> peers;
 	public Process(int id, String membership) {
-		
 		
 		this.id = id;
 		File membershipPath = new File(System.getProperty("user.dir") + "/src/main/java/daProc/" + membership + ".txt");
-		try {
-			String[] processParam = readMembership(membershipPath, id);
-			this.ip = processParam[1];
-			this.port = Integer.valueOf(processParam[2]);
-			
-		} catch (Exception e) {
-            e.printStackTrace();
-		}
-		
+		String[] processParam = readMembership(membershipPath, id);
+		this.ip = processParam[1];
+		this.port = Integer.valueOf(processParam[2]);
+
 		//create outPath
 		this.outPath = "da_proc_" + this.id;
+		try {
+			this.socket = new DatagramSocket(this.port);
+		} catch (java.net.SocketException e) {
+			System.out.println("Error while creating a socket at port " + this.port);
+			e.printStackTrace();
+		}
+		this.peers = getPeers(membershipPath, id);
+		this.crashed = false;
+		this.seqNumber = 1;
 	}
 	
-	
-	
+
 	public void send() {
-		//TODO
+		byte[] sendBuffer;
+		while (!this.crashed) {
+			sendBuffer = Integer.toString(seqNumber).getBytes();
+			for (Peer peer : this.peers) {
+				DatagramPacket packet = new DatagramPacket(sendBuffer, sendBuffer.length, peer.inetAddress, peer.port);
+				System.out.printf("Sent message with seqNr %s to peer %s", seqNumber, peer.getIpPort());
+				try {
+					socket.send(packet);
+				} catch(java.io.IOException e) {
+					System.out.println("Error while sending DatagramPacket");
+					e.printStackTrace();
+				}
+			}
+			seqNumber++;
+		}
 	}
+
+	// TODO: Check prevention of receiving messages after crash() method is called
 	public void receive() {
-		//TODO
+		while (!this.crashed) {
+			byte[] receiveBuffer = new byte[256];
+			DatagramPacket packet = new DatagramPacket(receiveBuffer, receiveBuffer.length);
+			try {
+				// Blocking call
+				socket.receive(packet);
+				// Message was read after crash() was called --> Do not write it anymore
+				if (this.crashed) {
+					break;
+				}
+
+				// Receive address and port of sender
+				// InetAddress address = packet.getAddress();
+				// int port = packet.getPort();
+
+				// Read data from packet
+				String received = new String(packet.getData(), 0, packet.getLength());
+				System.out.println("Received packet with the following content: " + received);
+				// TODO: Write to file
+
+			} catch (java.io.IOException e) {
+				System.out.println("Error while receiving DatagramPacket");
+				e.printStackTrace();
+			}
+		}
 	}
-	public static void crash() {
+
+	public void crash() {
+		this.crashed = true;
+		this.socket.close();
 		//just to clean up buffers and log unlogged data/packets/messages before closing
 		//TODO
 	}
-	
+
+	public static ArrayList<Peer> getPeers(File f, int procID) {
+		ArrayList<Peer> initPeers = new ArrayList<Peer>();
+		try{
+			BufferedReader b = new BufferedReader(new FileReader(f));
+			String line;
+			String[] splitted;
+			while ((line = b.readLine()) != null) {
+				splitted = line.split("\\s+");
+				if (Integer.valueOf(splitted[0]) != procID && splitted.length == 3) {
+					initPeers.add(new Peer(splitted[1], Integer.valueOf(splitted[2])));
+				}
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return initPeers;
+	}
+
 	public static String[] readMembership(File f, int procID) {
-
-		String[] splited;
-		
+		String[] splitted;
 		try {
-
             BufferedReader b = new BufferedReader(new FileReader(f));
             String readLine = "";
 
             while ((readLine = b.readLine()) != null) {
             	String line = readLine;
-            	splited = line.split("\\s+");
-            	if (Integer.valueOf(splited[0]) == procID && splited.length == 3) {
-            		return splited;
+            	splitted = line.split("\\s+");
+            	if (Integer.valueOf(splitted[0]) == procID && splitted.length == 3) {
+            		return splitted;
             	}
             }
-
         } catch (IOException e) {
             e.printStackTrace();
         }
-		
 		return null;
-		
 	}
 	
-	//Custom classes
+	// Custom classes
     private class Message {
     	private int sender;
     	private int receiver;
@@ -97,6 +157,37 @@ public class Process {
     		return sn;
     	}
     }
+
+	static class Peer {
+		public String address;
+		public int port;
+		public InetAddress inetAddress;
+
+		public Peer(String address, int port) {
+			this.address = address;
+			this.port = port;
+			try {
+				inetAddress = InetAddress.getByName(this.address);
+			} catch (java.net.UnknownHostException e) {
+				System.out.println("Couldn't resolve address " + this.address);
+				e.printStackTrace();
+			}
+		}
+
+		public String getIpPort() {
+			return this.address + ":" + this.port;
+		}
+
+
+		@Override()
+		public boolean equals(Object obj) {
+			if (obj instanceof Peer) {
+				Peer peer = (Peer) obj;
+				return peer.address.equals(this.address) && peer.port == this.port;
+			}
+			return false;
+		}
+	}
  
     
     public static void main(String []args) {
@@ -121,10 +212,5 @@ public class Process {
             	//send(); //broadcast one message
             }
         });
-    	
-        while(true) {
-            //execute program
-        	//listen to incoming packets
-        }
     }
 }
