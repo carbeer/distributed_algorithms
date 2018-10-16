@@ -17,6 +17,7 @@ public class Process {
 	final private int id;
 	final private String ip;
 	final private int port;
+	final private String[] extraParams;
 	private DatagramSocket socket;
 	private boolean crashed;
 	private int seqNumber;
@@ -26,8 +27,21 @@ public class Process {
 	// Add logs here.
 	private String logs;
 
-	public Process(int id, String membership) {
-		this.id = id;
+	public Process(String[] args) {
+		// Parse command line arguments
+		this.id = Integer.valueOf(args[1]);
+		String membership = args[2];
+
+		// Check whether extra parameters were given as command line arguments
+		if (args.length > 2) {
+			extraParams = new String[args.length-3];
+			for (int i = 3; i < args.length; i++) {
+				extraParams[i-3] = args[i];
+			}
+		} else {
+			extraParams = null;
+		}
+
 		File membershipPath = new File(System.getProperty("user.dir") + "/src/main/java/daProc/" + membership + ".txt");
 		String[] processParam = readMembership(membershipPath, id);
 		this.ip = processParam[1];
@@ -51,55 +65,9 @@ public class Process {
 		}
 		// receive();
 	}
-	
-
-	public void send() {
-		byte[] sendBuffer;
-		while (!this.crashed) {
-			sendBuffer = Integer.toString(seqNumber).getBytes();
-			for (Peer peer : this.peers) {
-				DatagramPacket packet = new DatagramPacket(sendBuffer, sendBuffer.length, peer.inetAddress, peer.port);
-				System.out.printf("Sent message with seqNr %s to peer %s", seqNumber, peer.getIpPort());
-				try {
-					socket.send(packet);
-				} catch(java.io.IOException e) {
-					System.out.println("Error while sending DatagramPacket");
-					e.printStackTrace();
-				}
-			}
-			this.logs = String.format("%sb %s\n", this.logs, seqNumber);
-			System.out.println("Broadcast: b " + seqNumber );
-			seqNumber++;
-		}
-	}
 
 	// TODO: Check prevention of receiving messages after crash() method is called
 	public void receive() {
-		while (!this.crashed) {
-			byte[] receiveBuffer = new byte[256];
-			DatagramPacket packet = new DatagramPacket(receiveBuffer, receiveBuffer.length);
-			try {
-				// Blocking call
-				socket.receive(packet);
-				// Message was read after crash() was called --> Do not write it anymore
-				if (this.crashed) {
-					break;
-				}
-
-				// Receive address and port of sender
-				// InetAddress address = packet.getAddress();
-				// int port = packet.getPort();
-
-				// Read data from packet
-				String receivedSeqNr = new String(packet.getData(), 0, packet.getLength());
-				this.logs = String.format("%sd %s:%d %s\n", this.logs, packet.getAddress().toString(), packet.getPort(), receivedSeqNr);
-				System.out.println("Received packet: " + String.format("d %s:%d %s", packet.getAddress().toString(), packet.getPort(), receivedSeqNr));
-
-			} catch (java.io.IOException e) {
-				System.out.println("Error while receiving DatagramPacket");
-				e.printStackTrace();
-			}
-		}
 	}
 
 	//TODO Anything else necessary here?
@@ -205,9 +173,7 @@ public class Process {
 	}
     
     public static void main(String []args) {
-    	int processId = Integer.valueOf(args[1]);
-    	String membership = args[2];
-    	final Process process = new Process(processId, membership);
+    	final Process process = new Process(args);
 
     	Signal.handle(new Signal("SIGINT"), new SignalHandler() {
             public void handle(Signal sig) {

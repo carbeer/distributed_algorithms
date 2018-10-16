@@ -21,7 +21,8 @@ public class processTests {
         }
     }
 
-    @Test void test_readMembership() {
+    @Test
+    public void test_readMembership() {
         File membershipPath = new File(System.getProperty("user.dir") + "/src/test/java/daProc/membership.txt");
         String[] splitted = Process.readMembership(membershipPath, 2);
 
