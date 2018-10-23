@@ -222,6 +222,7 @@ public class Process {
     	
     	//Initialize
     	Process process = new Process(args);
+    	
     	//Signal handlers
     	Runtime r=Runtime.getRuntime();  
     	r.addShutdownHook(new Thread(){  
@@ -239,31 +240,20 @@ public class Process {
             }
         });
     	
-    	//Start listening
-    	ReceiverThread receiver = new ReceiverThread(process);
-    	receiver.start();
+    	//Start uniform broadcast logic and automatic generation of messages
+    	urbThread uniformBroadcast = new urbThread(process, start_sending);
+    	uniformBroadcast.start();
    	
-    	//Start sending messages iff start_sending has been set to true. Sends new messages every .5 seconds.
+    	//let process run freely until a crash is detected
     	while (!crashed) {
-    		try {
-				Thread.sleep(500);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
     		
-    		if(start_sending) {
-    			SenderThread thread = new SenderThread(process);
-    			thread.start();
-    			process.seqNumber++;
-    		}
-    	
     	}
     	
     	//Handles the crash and interrupts the receiver cleanly
     	process.crash();
-    	receiver.interrupt();
+    	uniformBroadcast.interrupt();
     	
-        //Kills process + all sending threads!
+        //Kills process + all threads!
     	System.exit(0);
     }
 }

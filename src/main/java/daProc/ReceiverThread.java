@@ -4,34 +4,49 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.util.ArrayList;
 
-import java.io.FileWriter;
-
-//this class corresponds to perfect links receiver that will deliver the message once
+//this class corresponds to best effort/perfect link receiver that will deliver the message once
 //this class merely receive messages and write its activity to the log file
 public class ReceiverThread extends Thread {
 
-	private DatagramSocket socket;
-	private FileWriter writer;
-	private volatile boolean running = true;
+	public Process process;
+	int[][][] urb_ack;
+	ArrayList<int[]> urb_pending;
 	
-	public ReceiverThread(Process process) {
-		this.writer = process.getWriter();
-		this.socket = process.getSocket();
+	public ReceiverThread(Process process, int[][][] urb_ack, ArrayList<int[]> urb_pending) {
+		this.process = process;
+		this.urb_ack = urb_ack;
+		this.urb_pending = urb_pending;
 	}
-
-	public void interrupt() {
-		this.running = false;
-		}
 	
+	//follows from page 83 of the book
+	public void bebDeliver(int[] message) {
+        
+        //if not already acked, ack it
+		if (urb_ack[message[0]][message[1]][process.getId()] != 1) {
+			urb_ack[message[0]][message[1]][process.getId()] = 1;
+		}
+		
+		//add message to pending list and bebBroadcast it
+		ArrayList<int[]> pending = urb_pending;
+		if(!pending.contains(message)) {
+			pending.add(message);
+			bebSendThread thread = new bebSendThread(process, message[0], message[1]);
+			thread.start();
+		}
+	}
+	
+	//implements best effort broadcast
 	public void run() {
     	
-		ArrayList<int[]> messages_delivered = new ArrayList<int[]>();
+		ArrayList<int[]> messages_beb_delivered = new ArrayList<int[]>();
+		DatagramSocket socket = process.getSocket();
 
-        //Thread will be crashed/stopped from the level above in the main
-        while (running) {
+        //Thread will be crashed/stopped from the main
+        while (true) {
             byte[] receiveBuffer = new byte[256];
             DatagramPacket packet = new DatagramPacket(receiveBuffer, receiveBuffer.length);
             try {
+            	//listen continuously
                 socket.receive(packet);
 
                 // Read data from packet
@@ -43,17 +58,9 @@ public class ReceiverThread extends Thread {
                 int[] message = {sender_id, msg_seq};
                 
                 //perfect_link logic : deliver only if never delivered before
-                if (!messages_delivered.contains(message)) {
-                	messages_delivered.add(message);
-                	
-	                //Write to log = deliver the message
-	                try { 
-	                 	writer.write("d " + sender_id + " " + msg_seq);
-	                    
-	                } finally {
-	                	writer.close();
-	                }
-	                System.out.println("Packet delivered: " + String.format("d %s:%d %s", packet.getAddress().toString(), packet.getPort(), payload));
+                if (!messages_beb_delivered.contains(message)) {
+                	messages_beb_delivered.add(message);
+                	bebDeliver(message);
                 }
 
             } catch (java.io.IOException e) {
@@ -61,8 +68,5 @@ public class ReceiverThread extends Thread {
                 e.printStackTrace();
             }
         }
-        
-        //Cleanup when stopped
-        //TODO while buffer not empty, write to log!
     }
 }
