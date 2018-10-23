@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import sun.misc.Signal;
 import sun.misc.SignalHandler;
 
+
 public class Process {
 	
 	//Messages sent but not acked yet
@@ -19,13 +20,13 @@ public class Process {
 	final private int port;
 	final private String[] extraParams;
 	private DatagramSocket socket;
-	private boolean crashed;
+	static volatile boolean crashed;
+	static volatile boolean start_sending;
 	private int seqNumber;
 	private ArrayList<Peer> peers;
 	// Never use the FileWriter until the process crashes.
 	private FileWriter writer;
-	// Add logs here.
-	private String logs;
+	// Add logs to write to here.
 
 	public Process(String[] args) {
 		// Parse command line arguments
@@ -46,9 +47,9 @@ public class Process {
 		String[] processParam = readMembership(membershipPath, id);
 		this.ip = processParam[1];
 		this.port = Integer.valueOf(processParam[2]);
-		this.logs = "";
 		this.peers = getPeers(membershipPath, id);
-		this.crashed = false;
+		crashed = false;
+		start_sending = false;
 		this.seqNumber = 1;
 
 		try {
@@ -63,25 +64,66 @@ public class Process {
 			System.out.println("Error while creating the file writer");
 			e.printStackTrace();
 		}
-		// receive();
+	}
+
+	public DatagramSocket getSocket() {
+		return socket;
+	}
+
+	public void setSocket(DatagramSocket socket) {
+		this.socket = socket;
+	}
+
+	public boolean isCrashed() {
+		return crashed;
+	}
+
+	public int getSeqNumber() {
+		return seqNumber;
+	}
+
+	public void setSeqNumber(int seqNumber) {
+		this.seqNumber = seqNumber;
+	}
+
+	public ArrayList<Peer> getPeers() {
+		return peers;
+	}
+
+	public void setPeers(ArrayList<Peer> peers) {
+		this.peers = peers;
+	}
+
+	public int getId() {
+		return id;
+	}
+
+	public FileWriter getWriter() {
+		return writer;
+	}
+
+	public String getIp() {
+		return ip;
+	}
+
+	public int getPort() {
+		return port;
 	}
 
 	// TODO: Check prevention of receiving messages after crash() method is called
 	public void receive() {
 	}
 
-	//TODO Anything else necessary here?
+
+	//set crash to true
 	public void crash() {
-		this.crashed = true;
 		this.socket.close();
-		try {
-			writer.write(logs);
-			writer.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
 	}
 
+	
+	//HELPERS
+	
+	//parses the peers from the membership file
 	public static ArrayList<Peer> getPeers(File f, int procID) {
 		ArrayList<Peer> initPeers = new ArrayList<Peer>();
 		try{
@@ -99,7 +141,8 @@ public class Process {
 		}
 		return initPeers;
 	}
-
+	
+	//Parses the membership file
 	public static String[] readMembership(File f, int procID) {
 		String[] splitted;
 		try {
@@ -119,8 +162,10 @@ public class Process {
 		return null;
 	}
 	
+	
+	
 	// Custom classes
-    private class Message {
+    public class Message {
     	private int sender;
     	private int receiver;
     	private int sn;
@@ -172,23 +217,53 @@ public class Process {
 		}
 	}
     
-    public static void main(String []args) {
-    	final Process process = new Process(args);
-
-    	Signal.handle(new Signal("SIGINT"), new SignalHandler() {
-            public void handle(Signal sig) {
-                System.out.println("Stopping network packet processing...\n");
-                process.crash(); //clean up using crash method
-                System.out.println("Teardown complete, exiting now.\n");
-            	System.exit(0); //kill process
-            }
-        });
+    @SuppressWarnings("restriction")
+	public static void main(String []args) {
+    	
+    	//Initialize
+    	Process process = new Process(args);
+    	//Signal handlers
+    	Runtime r=Runtime.getRuntime();  
+    	r.addShutdownHook(new Thread(){  
+    	public void run(){
+    		crashed = true;
+    	    System.out.println("Process has been crashed, cleaning up and exiting.");  
+    	    }  
+    	}  
+    	);
     	
     	Signal.handle(new Signal("SIGUSR2"), new SignalHandler() {
             public void handle(Signal sig) {
-                System.out.println("Sending message!\n");
-            	//send(); //broadcast one message
+                System.out.println("Starting the broadcast\n");
+                start_sending = true;
             }
         });
+    	
+    	//Start listening
+    	ReceiverThread receiver = new ReceiverThread(process);
+    	receiver.start();
+   	
+    	//Start sending messages iff start_sending has been set to true. Sends new messages every .5 seconds.
+    	while (!crashed) {
+    		try {
+				Thread.sleep(500);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+    		
+    		if(start_sending) {
+    			SenderThread thread = new SenderThread(process);
+    			thread.start();
+    			process.seqNumber++;
+    		}
+    	
+    	}
+    	
+    	//Handles the crash and interrupts the receiver cleanly
+    	process.crash();
+    	receiver.interrupt();
+    	
+        //Kills process + all sending threads!
+    	System.exit(0);
     }
 }
