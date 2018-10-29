@@ -3,9 +3,6 @@ package daProc;
 import java.io.*;
 import java.net.DatagramSocket;
 import java.util.ArrayList;
-
-import sun.misc.Signal;
-import sun.misc.SignalHandler;
 import utils.Peer;
 
 

@@ -9,26 +9,22 @@ import java.util.ArrayList;
 //this class merely receive messages and write its activity to the log file
 public class FIFOReceiverThread extends Thread {
 
-	public Process process;
-	int[][][] urb_ack;
-	ArrayList<int[]> urb_pending;
+	public FIFOBroadcast process;
 	
-	public FIFOReceiverThread(Process process, int[][][] urb_ack, ArrayList<int[]> urb_pending) {
+	public FIFOReceiverThread(FIFOBroadcast process) {
 		this.process = process;
-		this.urb_ack = urb_ack;
-		this.urb_pending = urb_pending;
 	}
 	
 	//follows from page 83 of the book
 	public void bebDeliver(int[] message) {
         
         //if not already acked, ack it
-		if (urb_ack[message[0]][message[1]][process.getId()] != 1) {
-			urb_ack[message[0]][message[1]][process.getId()] = 1;
+		if (process.urb_ack[message[0]][message[1]][process.getId()] != 1) {
+			process.urb_ack[message[0]][message[1]][process.getId()] = 1;
 		}
 		
 		//add message to pending list and bebBroadcast it
-		ArrayList<int[]> pending = urb_pending;
+		ArrayList<int[]> pending = process.urb_messages_pending;
 		if(!pending.contains(message)) {
 			pending.add(message);
 			PerfectSendThread thread = new PerfectSendThread(message[0], message[1], process.getPeers(), process.getSocket());
