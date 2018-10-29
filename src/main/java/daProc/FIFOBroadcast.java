@@ -2,6 +2,7 @@ package daProc;
 
 import utils.Message;
 
+import java.util.logging.Level;
 import java.util.Arrays;
 import java.util.HashSet;
 
@@ -10,8 +11,6 @@ import sun.misc.SignalHandler;
 
 //follows from page 83 and 85 of the book
 public class FIFOBroadcast extends Process {
-
-
 	HashSet<Message> messages_delivered;
 	HashSet<Message> messages_pending;
 	int[][][] urb_ack;
@@ -22,6 +21,7 @@ public class FIFOBroadcast extends Process {
 	
 	public FIFOBroadcast(String[] args) throws Exception {
 		super(args);
+		LOGGER.log(Level.INFO, "Creating instance of FIFOBroadcast now");
 		if (extraParams == null) {
 			throw new Exception("Please provide the number of messages as argument for FIFOBroadcast");
 		} else if (extraParams.length != 1) {
@@ -32,6 +32,8 @@ public class FIFOBroadcast extends Process {
 		this.messages_pending = new HashSet<>();
 		//did not find a more efficient data structure. 3000 messages to urb_ack for each process should be enough though!
 		this.urb_ack = new int[peers.size()][3000][peers.size()];
+
+		new FIFOReceiverThread(this).start();
 
 		while(!crashed) {
 			try {
@@ -57,8 +59,6 @@ public class FIFOBroadcast extends Process {
 				}
 			}
 		}
-		//Handles the crash and interrupts the receiver cleanly
-		crash();
 	}
 
 
@@ -89,8 +89,8 @@ public class FIFOBroadcast extends Process {
     
 
     public static void main(String []args) {
-   	
-    	//Initialize
+		LOGGER.log(Level.FINE, "Entering the main method");
+		//Initialize
 		try {
 			FIFOBroadcast process = new FIFOBroadcast(args);
 		} catch (Exception e ) {
@@ -100,19 +100,23 @@ public class FIFOBroadcast extends Process {
     	//Signal handlers
     	Runtime r = Runtime.getRuntime();
     	r.addShutdownHook(new Thread(){  
-    	public void run(){
-    		crashed = true;
-    	    System.out.println("Process has been crashed, cleaning up and exiting.");  
-    	    }  
-    	}  
-    	);
-    	
-    	Signal.handle(new Signal("SIGUSR2"), new SignalHandler() {
+			public void run(){
+				LOGGER.log(Level.SEVERE, "Process has been crashed, cleaning up and exiting.");
+				crashed = true;
+				writeLogsToFile();
+				socket.close();
+				System.exit(0);
+			}
+    	});
+
+    	/*
+    	Signal.handle(new Signal("SIGUSR1"), new SignalHandler() {
             public void handle(Signal sig) {
                 System.out.println("Starting the broadcast\n");
                 start_sending = true;
             }
         });
-    	//cleanup
+		*/
     }
 }
+

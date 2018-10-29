@@ -5,17 +5,22 @@ import utils.Message;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.util.HashSet;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 //this class corresponds to best effort/perfect link receiver that will deliver the message once
 //this class merely receive messages and write its activity to the log file
 public class FIFOReceiverThread extends Thread {
 
 	public FIFOBroadcast process;
+	final static Logger LOGGER = Logger.getLogger(FIFOBroadcast.class.getName());
 
+	// messages that are
 	int[][][] urb_ack;
 	HashSet<Message> urb_pending;
 	
-	public FIFOReceiverThread(FIFOBroadcast process, int[][][] urb_ack, HashSet<Message> urb_pending) {
+	public FIFOReceiverThread(FIFOBroadcast process) {
+		LOGGER.log(Level.INFO, "Creating instance of FIFOReceiverThread now");
 		this.process = process;
 	}
 	
@@ -49,9 +54,7 @@ public class FIFOReceiverThread extends Thread {
             byte[] receiveBuffer = new byte[256];
             DatagramPacket packet = new DatagramPacket(receiveBuffer, receiveBuffer.length);
             try {
-            	//listen continuously
                 socket.receive(packet);
-
                 // Read data from packet
                 int msg_seq = Integer.parseInt(new String(packet.getData(), 0, packet.getLength()));
 
