@@ -161,38 +161,4 @@ public class Process {
 		return null;
 	}
     
-    @SuppressWarnings("restriction")
-	public static void main(String []args) {
-    	
-    	//Initialize
-    	Process process = new Process(args);
-    	
-    	//Signal handlers
-    	Runtime r = Runtime.getRuntime();
-    	r.addShutdownHook(new Thread(){  
-    	public void run(){
-    		crashed = true;
-    	    System.out.println("Process has been crashed, cleaning up and exiting.");  
-    	    }  
-    	}  
-    	);
-    	
-    	Signal.handle(new Signal("SIGUSR2"), new SignalHandler() {
-            public void handle(Signal sig) {
-                System.out.println("Starting the broadcast\n");
-                start_sending = true;
-            }
-        });
-
-   	
-    	//let process run freely until a crash is detected
-    	while (!crashed) {
-    		
-    	}
-    	//Handles the crash and interrupts the receiver cleanly
-    	process.crash();
-    	
-        //Kills process + all threads!
-    	System.exit(0);
-    }
 }

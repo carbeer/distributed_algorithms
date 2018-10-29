@@ -4,7 +4,6 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.util.ArrayList;
 
-import daProc.Process.Peer;
 import utils.Peer;
 
 //this class corresponds to perfect link broadcast that will send the message indefinitely
@@ -34,7 +33,7 @@ public class PerfectSendThread extends Thread {
             sendBuffer = (Integer.toString(sender_id) + " "  + Integer.toString(seqNumber)).getBytes();
             
 
-            for (Process.Peer peer : this.dst_peer) {
+            for (Peer peer : this.dst_peer) {
                 DatagramPacket packet = new DatagramPacket(sendBuffer, sendBuffer.length, peer.inetAddress, peer.port);
                 System.out.printf("Sent message with seqNr %s to peer %s", seqNumber, peer.getIpPort());
                 try {

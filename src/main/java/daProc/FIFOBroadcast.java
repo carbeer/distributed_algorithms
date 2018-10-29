@@ -4,14 +4,16 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import daProc.Process.Peer;
+import sun.misc.Signal;
+import sun.misc.SignalHandler;
+import utils.Peer;
 
 //follows from page 83 and 85 of the book
 public class FIFOBroadcast extends Process {
 
 	ArrayList<int[]> messages_delivered;
 	ArrayList<int[]> messages_pending;
-	int[][][] ack;
+	public int[][][] ack;
 	public boolean start_broadcast;
 
 	
@@ -51,35 +53,56 @@ public class FIFOBroadcast extends Process {
         writeLogLine("d " + sender_id + " " + msg_seq);
     }
     
+    @SuppressWarnings("restriction")
+	public static void main(String []args) {
+   	
+    	//Initialize
+    	FIFOBroadcast process = new FIFOBroadcast(args);
+    	
+    	int seq_msg = process.getSeqNumber();
 
-	public void run() {    	
-    	int seq_msg = getSeqNumber();
+    	//Signal handlers
+    	Runtime r = Runtime.getRuntime();
+    	r.addShutdownHook(new Thread(){  
+    	public void run(){
+    		crashed = true;
+    	    System.out.println("Process has been crashed, cleaning up and exiting.");  
+    	    }  
+    	}  
+    	);
+    	
+    	Signal.handle(new Signal("SIGUSR2"), new SignalHandler() {
+            public void handle(Signal sig) {
+                System.out.println("Starting the broadcast\n");
+                start_sending = true;
+            }
+        });
     	
     	//urbReceiverThread will update the ack variable
     	//start to listen
-    	FIFOReceiverThread sender = new FIFOReceiverThread(this, ack, messages_pending);
+    	FIFOReceiverThread sender = new FIFOReceiverThread(process, process.ack, process.messages_pending);
     	sender.start();
 
-    	while(crashed) {
+    	while(!crashed) {
     		try {
 				Thread.sleep(500);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
     		
-    		if (start_broadcast) {
+    		if (process.start_broadcast) {
 				//broadcast a new message every .5 seconds.
-				urbBroadcast(getId(), getSeqNumber());
+				process.urbBroadcast(process.id, process.seqNumber);
 				seq_msg++;
-				setSeqNumber(seq_msg);
+				process.setSeqNumber(seq_msg);
     		}
     		//check every message in pending and deliver if possible
-    		if (messages_pending.size() != 0) {
-    			for (int[] temp : messages_pending) {
-    				if(canDeliver(temp[0], temp[1])) {
-    					messages_delivered.add(temp);
+    		if (process.messages_pending.size() != 0) {
+    			for (int[] temp : process.messages_pending) {
+    				if(process.canDeliver(temp[0], temp[1])) {
+    					process.messages_delivered.add(temp);
     					try {
-							urbDeliver(temp[0], temp[1]);
+							process.urbDeliver(temp[0], temp[1]);
 						} catch (IOException e) {
 							e.printStackTrace();
 						}
@@ -89,5 +112,11 @@ public class FIFOBroadcast extends Process {
     	}
         //TODO while buffer not empty, write to log!
     	//cleanup
+    	
+    	//Handles the crash and interrupts the receiver cleanly
+    	process.crash();
+    	
+        //Kills process + all threads!
+    	System.exit(0);
     }
 }
