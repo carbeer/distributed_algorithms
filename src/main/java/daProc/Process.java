@@ -1,31 +1,28 @@
 package daProc;
 
 import java.io.*;
-import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.InetAddress;
 import java.util.ArrayList;
 
 import sun.misc.Signal;
 import sun.misc.SignalHandler;
+import utils.Peer;
 
 
 public class Process {
-	
-	//Messages sent but not acked yet
-	private ArrayList<Message> sentMsg;
-	//
-	final private int id;
-	final private String ip;
-	final private int port;
-	final private String[] extraParams;
-	private DatagramSocket socket;
+	final int id;
+	final String ip;
+	final int port;
+	final String[] extraParams;
+	DatagramSocket socket;
 	static volatile boolean crashed;
 	static volatile boolean start_sending;
-	private int seqNumber;
-	private ArrayList<Peer> peers;
+	int seqNumber;
+	ArrayList<Peer> peers;
+	static private String logs;
+
 	// Never use the FileWriter until the process crashes.
-	private FileWriter writer;
+	FileWriter writer;
 	// Add logs to write to here.
 
 	public Process(String[] args) {
@@ -63,6 +60,13 @@ public class Process {
 		} catch (java.io.IOException e) {
 			System.out.println("Error while creating the file writer");
 			e.printStackTrace();
+		}
+	}
+
+	public static void writeLogLine(String s) {
+		if (!crashed) {
+			logs = logs + s + "\n";
+			System.out.println(s);
 		}
 	}
 
@@ -110,11 +114,6 @@ public class Process {
 		return port;
 	}
 
-	// TODO: Check prevention of receiving messages after crash() method is called
-	public void receive() {
-	}
-
-
 	//set crash to true
 	public void crash() {
 		this.socket.close();
@@ -161,61 +160,6 @@ public class Process {
         }
 		return null;
 	}
-	
-	
-	
-	// Custom classes
-    public class Message {
-    	private int sender;
-    	private int receiver;
-    	private int sn;
-    	
-    	public Message(int s, int r, int n) {
-    		sender = s;
-    		receiver = r;
-    		sn = n;
-    	}
-    	
-    	public int getSender() {
-    		return sender;	
-    	}
-    	public int getReceiver() {
-    		return receiver;
-    	}
-    	public int getSn() {
-    		return sn;
-    	}
-    }
-
-	static class Peer {
-		public String address;
-		public int port;
-		public InetAddress inetAddress;
-
-		public Peer(String address, int port) {
-			this.address = address;
-			this.port = port;
-			try {
-				inetAddress = InetAddress.getByName(this.address);
-			} catch (java.net.UnknownHostException e) {
-				System.out.println("Couldn't resolve address " + this.address);
-				e.printStackTrace();
-			}
-		}
-
-		public String getIpPort() {
-			return this.address + ":" + this.port;
-		}
-
-		@Override()
-		public boolean equals(Object obj) {
-			if (obj instanceof Peer) {
-				Peer peer = (Peer) obj;
-				return peer.address.equals(this.address) && peer.port == this.port;
-			}
-			return false;
-		}
-	}
     
     @SuppressWarnings("restriction")
 	public static void main(String []args) {
@@ -224,7 +168,7 @@ public class Process {
     	Process process = new Process(args);
     	
     	//Signal handlers
-    	Runtime r=Runtime.getRuntime();  
+    	Runtime r = Runtime.getRuntime();
     	r.addShutdownHook(new Thread(){  
     	public void run(){
     		crashed = true;
@@ -239,19 +183,14 @@ public class Process {
                 start_sending = true;
             }
         });
-    	
-    	//Start uniform broadcast logic and automatic generation of messages
-    	urbThread uniformBroadcast = new urbThread(process, start_sending);
-    	uniformBroadcast.start();
+
    	
     	//let process run freely until a crash is detected
     	while (!crashed) {
     		
     	}
-    	
     	//Handles the crash and interrupts the receiver cleanly
     	process.crash();
-    	uniformBroadcast.interrupt();
     	
         //Kills process + all threads!
     	System.exit(0);
