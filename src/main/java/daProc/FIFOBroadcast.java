@@ -1,46 +1,80 @@
 package daProc;
 
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.ArrayList;
+import utils.Message;
+
+import java.util.Arrays;
+import java.util.HashSet;
 
 import sun.misc.Signal;
 import sun.misc.SignalHandler;
-import utils.Peer;
 
 //follows from page 83 and 85 of the book
 public class FIFOBroadcast extends Process {
 
-	ArrayList<int[]> urb_messages_delivered;
-	ArrayList<int[]> urb_messages_pending;
-	public int[][][] urb_ack;
-	public boolean start_broadcast;
+
+	HashSet<Message> messages_delivered;
+	HashSet<Message> messages_pending;
+	int[][][] urb_ack;
+	boolean start_broadcast;
+	// Amount of messages that shall be sent by this process
+	int nrMessages;
 
 	
-	public FIFOBroadcast(String[] args) {
+	public FIFOBroadcast(String[] args) throws Exception {
 		super(args);
-		
-		this.urb_messages_delivered = new ArrayList<int[]>();
-		this.urb_messages_pending = new ArrayList<int[]>();
-		//did not find a more efficient data structure. 3000 messages to ack for each process should be enough though!
+		if (extraParams == null) {
+			throw new Exception("Please provide the number of messages as argument for FIFOBroadcast");
+		} else if (extraParams.length != 1) {
+			throw new Exception("You passed invalid arguments: " + Arrays.toString(extraParams));
+		}
+		this.nrMessages = Integer.parseInt(extraParams[0]);
+		this.messages_delivered = new HashSet<>();
+		this.messages_pending = new HashSet<>();
+		//did not find a more efficient data structure. 3000 messages to urb_ack for each process should be enough though!
 		this.urb_ack = new int[peers.size()][3000][peers.size()];
+
+		while(!crashed) {
+			try {
+				Thread.sleep(500);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+			int seq_msg = getSeqNumber();
+
+			if (start_broadcast && this.nrMessages >= seq_msg) {
+				//broadcast a new message every .5 seconds.
+				urbBroadcast(new Message(getId(), getSeqNumber()));
+				seq_msg++;
+				setSeqNumber(seq_msg);
+			}
+			//check every message in pending and deliver if possible
+			if (messages_pending.size() != 0) {
+				for (Message temp : messages_pending) {
+					if(canDeliver(temp)) {
+						messages_delivered.add(temp);
+						urbDeliver(temp);
+					}
+				}
+			}
+		}
+		//Handles the crash and interrupts the receiver cleanly
+		crash();
 	}
 
-	
-    public void urbBroadcast(int sender_id, int msg_seq) {
-        int[] message = {sender_id, msg_seq};
-    	if(!urb_messages_pending.contains(message)) {
-    		urb_messages_pending.add(message);
+
+    public void urbBroadcast(Message msg) {
+    	if(!messages_pending.contains(msg)) {
+    		messages_pending.add(msg);
     	}
-		PerfectSendThread thread = new PerfectSendThread(sender_id, msg_seq, getPeers(), getSocket());
+		PerfectSendThread thread = new PerfectSendThread(msg, getPeers(), getSocket());
 		thread.start();
     }
 	
-    public boolean canDeliver(int sender_id, int msg_seq) {
+    public boolean canDeliver(Message msg) {
     	//count how many acks recorded for this message
     	int counter = 0;
-    	for (int i = 0; i < urb_ack[sender_id][msg_seq].length; i++) {
-    	    if (urb_ack[sender_id][msg_seq][i] == 1) {counter++;}
+    	for (int i = 0; i < urb_ack[msg.getSender()][msg.getSn()].length; i++) {
+    	    if (urb_ack[msg.getSender()][msg.getSn()][i] == 1) {counter++;}
     	}
     	//from page 85 of book, if more acks than half of the peers strictly, can deliver
     	if (counter > peers.size()/2) {
@@ -49,17 +83,19 @@ public class FIFOBroadcast extends Process {
     	return false;
     }
     
-    public void urbDeliver(int sender_id, int msg_seq) throws IOException {
-        writeLogLine("d " + sender_id + " " + msg_seq);
+    public void urbDeliver(Message msg) {
+        writeLogLine("d " + msg.getSender() + " " + msg.getSn());
     }
     
 
     public static void main(String []args) {
    	
     	//Initialize
-    	FIFOBroadcast process = new FIFOBroadcast(args);
-    	
-    	int seq_msg = process.getSeqNumber();
+		try {
+			FIFOBroadcast process = new FIFOBroadcast(args);
+		} catch (Exception e ) {
+			e.printStackTrace();
+		}
 
     	//Signal handlers
     	Runtime r = Runtime.getRuntime();
@@ -77,46 +113,6 @@ public class FIFOBroadcast extends Process {
                 start_sending = true;
             }
         });
-    	
-    	//urbReceiverThread will update the ack variable
-    	//start to listen
-    	FIFOReceiverThread sender = new FIFOReceiverThread(process);
-    	sender.start();
-
-    	while(!crashed) {
-    		try {
-				Thread.sleep(500);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-    		
-    		if (process.start_broadcast) {
-				//broadcast a new message every .5 seconds.
-				process.urbBroadcast(process.id, process.seqNumber);
-				seq_msg++;
-				process.setSeqNumber(seq_msg);
-    		}
-    		//check every message in pending and deliver if possible
-    		if (process.urb_messages_pending.size() != 0) {
-    			for (int[] temp : process.urb_messages_pending) {
-    				if(process.canDeliver(temp[0], temp[1])) {
-    					process.urb_messages_delivered.add(temp);
-    					try {
-							process.urbDeliver(temp[0], temp[1]);
-						} catch (IOException e) {
-							e.printStackTrace();
-						}
-    				}
-    			}
-    		}
-    	}
-        //TODO while buffer not empty, write to log!
     	//cleanup
-    	
-    	//Handles the crash and interrupts the receiver cleanly
-    	process.crash();
-    	
-        //Kills process + all threads!
-    	System.exit(0);
     }
 }

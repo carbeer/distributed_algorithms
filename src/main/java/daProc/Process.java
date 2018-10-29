@@ -3,6 +3,8 @@ package daProc;
 import java.io.*;
 import java.net.DatagramSocket;
 import java.util.ArrayList;
+import java.util.HashMap;
+
 import utils.Peer;
 
 
@@ -16,7 +18,9 @@ public class Process {
 	static volatile boolean start_sending;
 	int seqNumber;
 	ArrayList<Peer> peers;
+	HashMap<String, Integer> idFromAddress;
 	static private String logs;
+
 
 	// Never use the FileWriter until the process crashes.
 	FileWriter writer;
@@ -115,12 +119,12 @@ public class Process {
 	public void crash() {
 		this.socket.close();
 	}
-
 	
 	//HELPERS
-	
-	//parses the peers from the membership file
-	public static ArrayList<Peer> getPeers(File f, int procID) {
+
+	// TODO: Merge with readMembership
+	// Parses the peers from the membership file and create idFromAddress HashMap
+	public ArrayList<Peer> getPeers(File f, int procID) {
 		ArrayList<Peer> initPeers = new ArrayList<Peer>();
 		try{
 			BufferedReader b = new BufferedReader(new FileReader(f));
@@ -129,6 +133,7 @@ public class Process {
 			while ((line = b.readLine()) != null) {
 				splitted = line.split("\\s+");
 				if (Integer.valueOf(splitted[0]) != procID && splitted.length == 3) {
+					this.idFromAddress.put(splitted[1], Integer.parseInt(splitted[0]));
 					initPeers.add(new Peer(splitted[1], Integer.valueOf(splitted[2])));
 				}
 			}
@@ -157,5 +162,4 @@ public class Process {
         }
 		return null;
 	}
-    
 }
