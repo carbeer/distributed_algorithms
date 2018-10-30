@@ -101,6 +101,7 @@ public class FIFOBroadcast extends Process {
     			for (int[] temp : process.urb_messages_pending) {
     				if(process.canDeliver(temp[0], temp[1])) {
     					process.urb_messages_delivered.add(temp);
+    					process.urb_messages_pending.remove(temp);
     					try {
 							process.urbDeliver(temp[0], temp[1]);
 						} catch (IOException e) {
