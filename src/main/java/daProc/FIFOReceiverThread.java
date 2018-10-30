@@ -9,7 +9,7 @@ import java.util.HashSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-//this class corresponds to urbReceiver that will deliver the messages according the the URB logic
+//this class corresponds to fifoReceiver that will deliver the messages according the the URB logic
 
 public class FIFOReceiverThread extends Thread {
 

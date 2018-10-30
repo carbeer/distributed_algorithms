@@ -63,7 +63,7 @@ public class Process {
 			e.printStackTrace();
 		}
 		try {
-			this.writer = new FileWriter(System.getProperty("user.dir") + "/logs/da_proc_" + this.id);
+			this.writer = new FileWriter(System.getProperty("user.dir") + "/logs/da_proc_" + this.id + ".txt");
 		} catch (java.io.IOException e) {
 			System.out.println("Error while creating the file writer");
 			e.printStackTrace();
