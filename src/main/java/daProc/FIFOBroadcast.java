@@ -18,7 +18,8 @@ public class FIFOBroadcast extends Process {
 	boolean start_broadcast;
 	// Amount of messages that shall be sent by this process
 	int nrMessages;
-
+	int[] fifo_next;
+	
 	
 	public FIFOBroadcast(String[] args) throws Exception {
 		super(args);
@@ -32,6 +33,10 @@ public class FIFOBroadcast extends Process {
 		this.nrMessages = Integer.parseInt(extraParams[0]);
 		// Messages that are pending for delivery
 		this.messages_pending = new HashSet<>();
+		
+		// FIFO keep track of next o deliver for each process
+		this.fifo_next = new int[peers.size()];
+		Arrays.fill(fifo_next, 1);
 
 		new FIFOReceiverThread(this).start();
 
@@ -66,10 +71,14 @@ public class FIFOBroadcast extends Process {
     }
 
     public void tryToDeliver(Message msg) {
-    	//from page 85 of book, if more acks than half of the peers strictly, can deliver
-    	if (msgAck.get(msg).size() > peers.size()/2) {
+    	//page 85 & 102 of book, if more acks than half of the peers strictly, can deliver for URB logic
+    	// and if fifo_order is respected for the original sender of the message >> can deliver the message
+    	if ((msgAck.get(msg).size() > peers.size()/2) 
+    			&& (msg.getSn()==fifo_next[msg.getSender() - 1])) {
+    		
 			writeLogLine("d " + msg.getSender() + " " + msg.getSn());
 			messages_pending.remove(msg);
+			fifo_next[msg.getSender() - 1] =+ 1;
     	}
     }
 

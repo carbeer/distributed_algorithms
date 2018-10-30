@@ -1,7 +1,6 @@
 package daProc;
 
 import utils.Message;
-
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.util.ArrayList;
@@ -10,8 +9,8 @@ import java.util.HashSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-//this class corresponds to best effort/perfect link receiver that will deliver the message once
-//this class merely receive messages and write its activity to the log file
+//this class corresponds to urbReceiver that will deliver the messages according the the URB logic
+
 public class FIFOReceiverThread extends Thread {
 
 	final static Logger LOGGER = Logger.getLogger(FIFOBroadcast.class.getName());
@@ -30,8 +29,9 @@ public class FIFOReceiverThread extends Thread {
 		if (process.msgAck.get(message) == null) {
 			process.msgAck.put(message, new ArrayList<Integer>());
 		}
-		// If I received a message from sender_id,
-		// I know sender_id received the message, and can ack it
+		
+		// page 83 : If I received a message from sender_id,
+		// I know sender_id received the message, and I can ack it for sender_id
 		if (process.msgAck.get(message).contains(sender_id)) {
 			process.msgAck.get(message).add(sender_id);
 		}
@@ -44,7 +44,7 @@ public class FIFOReceiverThread extends Thread {
 		}
 	}
 	
-	//implements best effort broadcast
+
 	public void run() {
     	
 		HashSet<Message> knownMessages = new HashSet<>();
@@ -61,13 +61,12 @@ public class FIFOReceiverThread extends Thread {
                 String received = new String(packet.getData());
                 String[] splitted = received.split(":");
 
-				// Get sender id
+				// Get data from packet
                 int sender_id = process.idFromAddress.get(packet.getAddress().toString());
                 int initial_sender = Integer.parseInt(splitted[0]);
                 int msg_seq = Integer.parseInt(splitted[1]);
 
 				Message message = new Message(initial_sender, msg_seq);
-
                 
                 //perfect_link logic : deliver only if never delivered before
                 if (!knownMessages.contains(message)) {
