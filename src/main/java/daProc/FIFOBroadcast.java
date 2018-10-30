@@ -2,6 +2,9 @@ package daProc;
 
 import utils.Message;
 
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -11,9 +14,7 @@ import sun.misc.SignalHandler;
 
 //follows from page 83 and 85 of the book
 public class FIFOBroadcast extends Process {
-	HashSet<Message> messages_delivered;
 	HashSet<Message> messages_pending;
-	int[][][] urb_ack;
 	boolean start_broadcast;
 	// Amount of messages that shall be sent by this process
 	int nrMessages;
@@ -27,11 +28,10 @@ public class FIFOBroadcast extends Process {
 		} else if (extraParams.length != 1) {
 			throw new Exception("You passed invalid arguments: " + Arrays.toString(extraParams));
 		}
+		this.msgAck = new HashMap<>();
 		this.nrMessages = Integer.parseInt(extraParams[0]);
-		this.messages_delivered = new HashSet<>();
+		// Messages that are pending for delivery
 		this.messages_pending = new HashSet<>();
-		//did not find a more efficient data structure. 3000 messages to urb_ack for each process should be enough though!
-		this.urb_ack = new int[peers.size()][3000][peers.size()];
 
 		new FIFOReceiverThread(this).start();
 
@@ -41,21 +41,16 @@ public class FIFOBroadcast extends Process {
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-			int seq_msg = getSeqNumber();
 
-			if (start_broadcast && this.nrMessages >= seq_msg) {
+			if (start_broadcast && this.nrMessages >= seqNumber) {
 				//broadcast a new message every .5 seconds.
-				urbBroadcast(new Message(getId(), getSeqNumber()));
-				seq_msg++;
-				setSeqNumber(seq_msg);
+				urbBroadcast(new Message(getId(), seqNumber));
+				seqNumber++;
 			}
 			//check every message in pending and deliver if possible
 			if (messages_pending.size() != 0) {
-				for (Message temp : messages_pending) {
-					if(canDeliver(temp)) {
-						messages_delivered.add(temp);
-						urbDeliver(temp);
-					}
+				for (Message msg : messages_pending) {
+					tryToDeliver(msg);
 				}
 			}
 		}
@@ -69,54 +64,33 @@ public class FIFOBroadcast extends Process {
 		PerfectSendThread thread = new PerfectSendThread(msg, getPeers(), getSocket());
 		thread.start();
     }
-	
-    public boolean canDeliver(Message msg) {
-    	//count how many acks recorded for this message
-    	int counter = 0;
-    	for (int i = 0; i < urb_ack[msg.getSender()][msg.getSn()].length; i++) {
-    	    if (urb_ack[msg.getSender()][msg.getSn()][i] == 1) {counter++;}
-    	}
+
+    public void tryToDeliver(Message msg) {
     	//from page 85 of book, if more acks than half of the peers strictly, can deliver
-    	if (counter > peers.size()/2) {
-    		return true;
+    	if (msgAck.get(msg).size() > peers.size()/2) {
+			writeLogLine("d " + msg.getSender() + " " + msg.getSn());
+			messages_pending.remove(msg);
     	}
-    	return false;
     }
-    
-    public void urbDeliver(Message msg) {
-        writeLogLine("d " + msg.getSender() + " " + msg.getSn());
-    }
-    
 
     public static void main(String []args) {
-		LOGGER.log(Level.FINE, "Entering the main method");
-		//Initialize
+		LOGGER.log(Level.FINE, "Entering the main method of the FIFOBroadcast");
 		try {
 			FIFOBroadcast process = new FIFOBroadcast(args);
 		} catch (Exception e ) {
 			e.printStackTrace();
 		}
 
+		// TODO: Move signal handlers to separate class
     	//Signal handlers
-    	Runtime r = Runtime.getRuntime();
-    	r.addShutdownHook(new Thread(){  
-			public void run(){
-				LOGGER.log(Level.SEVERE, "Process has been crashed, cleaning up and exiting.");
-				crashed = true;
-				writeLogsToFile();
-				socket.close();
-				System.exit(0);
-			}
-    	});
-
-    	/*
+		/*
     	Signal.handle(new Signal("SIGUSR1"), new SignalHandler() {
             public void handle(Signal sig) {
                 System.out.println("Starting the broadcast\n");
                 start_sending = true;
             }
         });
-
+		
     	//urbReceiverThread will update the ack variable
     	//start to listen
     	FIFOReceiverThread sender = new FIFOReceiverThread(process);
@@ -159,6 +133,26 @@ public class FIFOBroadcast extends Process {
         //Kills process + all threads!
     	System.exit(0);
 		*/
+
+		// TODO: Do we need this?
+    	Runtime r = Runtime.getRuntime();
+    	r.addShutdownHook(new Thread(){  
+			public void run(){
+				crash();
+			}
+    	});
+
+		Signal.handle(new Signal("INT"), new SignalHandler() {
+			public void handle(Signal sig) {
+				crash();
+			}
+		});
+
+		Signal.handle(new Signal("KILL"), new SignalHandler() {
+			public void handle(Signal sig) {
+				crash();
+			}
+		});
     }
 }
 

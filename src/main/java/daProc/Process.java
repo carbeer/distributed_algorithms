@@ -6,9 +6,12 @@ import java.net.DatagramSocket;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import utils.Message;
 import utils.Peer;
 
 
@@ -19,18 +22,15 @@ public class Process {
 	final String[] extraParams;
 	static DatagramSocket socket;
 	static volatile boolean crashed;
-	static volatile boolean start_sending;
 	int seqNumber;
 	ArrayList<Peer> peers;
+	// Lock for msgAck
+	private static final Lock lock = new ReentrantLock();
+	static volatile HashMap<Message, ArrayList<Integer>>  msgAck;
 	HashMap<String, Integer> idFromAddress;
 	static private String logs;
-	final static Logger LOGGER = Logger.getLogger(FIFOBroadcast.class.getName());
-
-
-
-	// Never use the FileWriter until the process crashes.
 	static FileWriter writer;
-	// Add logs to write to here.
+	final static Logger LOGGER = Logger.getLogger(FIFOBroadcast.class.getName());
 
 	public Process(String[] args) {
 		// Parse command line arguments
@@ -54,7 +54,6 @@ public class Process {
 		this.port = Integer.valueOf(processParam[2]);
 		this.peers = getPeers(membershipPath, id);
 		crashed = false;
-		start_sending = false;
 		this.seqNumber = 1;
 
 		try {
@@ -69,6 +68,19 @@ public class Process {
 			System.out.println("Error while creating the file writer");
 			e.printStackTrace();
 		}
+	}
+
+	public static Lock getLock() {
+		return lock;
+	}
+
+	public static void crash() {
+		LOGGER.log(Level.SEVERE, "Process has been crashed, cleaning up.");
+		crashed = true;
+		writeLogsToFile();
+		socket.close();
+		LOGGER.log(Level.SEVERE, "Exiting now.");
+		System.exit(0);
 	}
 
 	public static void writeLogsToFile() {
@@ -93,46 +105,13 @@ public class Process {
 		return socket;
 	}
 
-	public void setSocket(DatagramSocket socket) {
-		this.socket = socket;
-	}
-
-	public boolean isCrashed() {
-		return crashed;
-	}
-
-	public int getSeqNumber() {
-		return seqNumber;
-	}
-
-	public void setSeqNumber(int seqNumber) {
-		this.seqNumber = seqNumber;
-	}
-
 	public ArrayList<Peer> getPeers() {
 		return peers;
-	}
-
-	public void setPeers(ArrayList<Peer> peers) {
-		this.peers = peers;
 	}
 
 	public int getId() {
 		return id;
 	}
-
-	public FileWriter getWriter() {
-		return writer;
-	}
-
-	public String getIp() {
-		return ip;
-	}
-
-	public int getPort() {
-		return port;
-	}
-
 
 	// TODO: Merge with readMembership
 	// Parses the peers from the membership file and create idFromAddress HashMap
