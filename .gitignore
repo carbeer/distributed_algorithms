@@ -9,3 +9,6 @@
 *.iws
 classes/
 /target/
+
+# Binaries
+/bin/
