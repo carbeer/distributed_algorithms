@@ -6,7 +6,7 @@ JVM=java
 # the rest is independent of the directory
 #
 JAVA_CLASSES:=$(patsubst %.java,%.class,$(JAVA_FILES))
-COMPILED_TARGET:=bin
+COMPILED_TARGET:=.
 MAIN:=da_proc
 
 .PHONY: classes
@@ -23,5 +23,5 @@ run: ${COMPILED_TARGET}/$(MAIN).class
 
 clean:
 	$(RM) ${COMPILED_TARGET}/*.class
-	$(RM) ${COMPILED_TARGET}/daProc/*.class
-	$(RM) ${COMPILED_TARGET}/utils/*.class
+	rm -rf daProc
+	rm -rf utils

@@ -11,4 +11,4 @@ classes/
 /target/
 
 # Binaries
-/bin/
+*.class
