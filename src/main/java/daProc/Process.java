@@ -1,11 +1,10 @@
 package daProc;
 
 import java.io.*;
-import java.lang.reflect.Array;
 import java.net.DatagramSocket;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
@@ -26,8 +25,7 @@ public class Process {
 	ArrayList<Peer> peers;
 	// Lock for msgAck
 	private static final Lock lock = new ReentrantLock();
-	static volatile HashMap<Message, ArrayList<Integer>>  msgAck;
-	HashMap<String, Integer> idFromAddress;
+	static volatile HashMap<Message, HashSet<String>>  msgAck;
 	static private String logs;
 	static FileWriter writer;
 	final static Logger LOGGER = Logger.getLogger(FIFOBroadcast.class.getName());
@@ -47,7 +45,6 @@ public class Process {
 			extraParams = null;
 		}
 
-		this.idFromAddress = new HashMap<>();
 		File membershipPath = new File(System.getProperty("user.dir") + File.separator + membership);
 		String[] processParam = readMembership(membershipPath, id);
 		this.ip = processParam[1];
@@ -113,12 +110,8 @@ public class Process {
 		return peers;
 	}
 
-	public int getId() {
-		return id;
-	}
-
 	// TODO: Merge with readMembership
-	// Parses the peers from the membership file and create idFromAddress HashMap
+	// Parses the peers from the membership file
 	public ArrayList<Peer> getPeers(File f, int procID) {
 		ArrayList<Peer> initPeers = new ArrayList<Peer>();
 		try{
@@ -128,8 +121,7 @@ public class Process {
 			while ((line = b.readLine()) != null) {
 				splitted = line.split("\\s+");
 				if (Integer.valueOf(splitted[0]) != procID && splitted.length == 3) {
-					this.idFromAddress.put(splitted[1], Integer.parseInt(splitted[0]));
-					initPeers.add(new Peer(splitted[1], Integer.valueOf(splitted[2])));
+					initPeers.add(new Peer(splitted[1], Integer.valueOf(splitted[2]), Integer.valueOf(splitted[0])));
 				}
 			}
 		} catch (IOException e) {
@@ -156,5 +148,9 @@ public class Process {
             e.printStackTrace();
         }
 		return null;
+	}
+
+	public static boolean isCrashed() {
+		return crashed;
 	}
 }

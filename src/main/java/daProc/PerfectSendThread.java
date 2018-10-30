@@ -27,7 +27,7 @@ public class PerfectSendThread extends Thread {
         //Thread will be crashed/stopped from the main
         //while the thread runs, send the message corresponding to the current seq_num of the parent process
         while (true) {
-            sendBuffer = (Integer.toString(message.getSender()) + ":" + Integer.toString(message.getSn())).getBytes();
+            sendBuffer = (Integer.toString(message.getOrigin()) + ":" + Integer.toString(message.getSn())).getBytes();
 
             for (Peer peer : this.peers) {
                 DatagramPacket packet = new DatagramPacket(sendBuffer, sendBuffer.length, peer.inetAddress, peer.port);
