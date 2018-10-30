@@ -48,7 +48,7 @@ public class Process {
 		}
 
 		this.idFromAddress = new HashMap<>();
-		File membershipPath = new File(System.getProperty("user.dir") + "\\" + membership);
+		File membershipPath = new File(System.getProperty("user.dir") + File.separator + membership);
 		String[] processParam = readMembership(membershipPath, id);
 		this.ip = processParam[1];
 		this.port = Integer.valueOf(processParam[2]);
@@ -63,7 +63,11 @@ public class Process {
 			e.printStackTrace();
 		}
 		try {
-			this.writer = new FileWriter(System.getProperty("user.dir") + "/logs/da_proc_" + this.id + ".txt");
+			File directory = new File(System.getProperty("user.dir") + File.separator + "logs");
+			if (! directory.exists()) {
+				directory.mkdir();
+				this.writer = new FileWriter(directory + File.separator + "da_proc_" + this.id);
+			}
 		} catch (java.io.IOException e) {
 			System.out.println("Error while creating the file writer");
 			e.printStackTrace();
