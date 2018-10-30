@@ -26,13 +26,14 @@ public class FIFOReceiverThread extends Thread {
 	}
 	
 	//follows from page 83 of the book
-	public void bebDeliver(Message message) {
+	public void bebDeliver(Message message, int sender_id) {
 		if (process.msgAck.get(message) == null) {
 			process.msgAck.put(message, new ArrayList<Integer>());
 		}
-		// TODO: Is this always the case here?
-		if (process.msgAck.get(message).contains(process.getId())) {
-			process.msgAck.get(message).add(process.getId());
+		// If I received a message from sender_id,
+		// I know sender_id received the message, and can ack it
+		if (process.msgAck.get(message).contains(sender_id)) {
+			process.msgAck.get(message).add(sender_id);
 		}
 
 		//add message to pending list and bebBroadcast it
@@ -61,10 +62,9 @@ public class FIFOReceiverThread extends Thread {
                 String[] splitted = received.split(":");
 
 				// Get sender id
-                //int sender_id = process.idFromAddress.get(packet.getAddress().toString());
+                int sender_id = process.idFromAddress.get(packet.getAddress().toString());
                 int initial_sender = Integer.parseInt(splitted[0]);
                 int msg_seq = Integer.parseInt(splitted[1]);
-
 
 				Message message = new Message(initial_sender, msg_seq);
 
@@ -72,7 +72,7 @@ public class FIFOReceiverThread extends Thread {
                 //perfect_link logic : deliver only if never delivered before
                 if (!knownMessages.contains(message)) {
                 	knownMessages.add(message);
-                	bebDeliver(message);
+                	bebDeliver(message, sender_id);
                 }
 
             } catch (java.io.IOException e) {

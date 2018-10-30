@@ -81,59 +81,6 @@ public class FIFOBroadcast extends Process {
 			e.printStackTrace();
 		}
 
-		// TODO: Move signal handlers to separate class
-    	//Signal handlers
-		/*
-    	Signal.handle(new Signal("SIGUSR1"), new SignalHandler() {
-            public void handle(Signal sig) {
-                System.out.println("Starting the broadcast\n");
-                start_sending = true;
-            }
-        });
-		
-    	//urbReceiverThread will update the ack variable
-    	//start to listen
-    	FIFOReceiverThread sender = new FIFOReceiverThread(process);
-    	sender.start();
-
-    	while(!crashed) {
-    		try {
-				Thread.sleep(500);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-    		
-    		if (process.start_broadcast) {
-				//broadcast a new message every .5 seconds.
-				process.urbBroadcast(process.id, process.seqNumber);
-				seq_msg++;
-				process.setSeqNumber(seq_msg);
-    		}
-    		//check every message in pending and deliver if possible
-    		if (process.urb_messages_pending.size() != 0) {
-    			for (int[] temp : process.urb_messages_pending) {
-    				if(process.canDeliver(temp[0], temp[1])) {
-    					process.urb_messages_delivered.add(temp);
-    					process.urb_messages_pending.remove(temp);
-    					try {
-							process.urbDeliver(temp[0], temp[1]);
-						} catch (IOException e) {
-							e.printStackTrace();
-						}
-    				}
-    			}
-    		}
-    	}
-        //TODO while buffer not empty, write to log!
-    	//cleanup
-    	
-    	//Handles the crash and interrupts the receiver cleanly
-    	process.crash();
-    	
-        //Kills process + all threads!
-    	System.exit(0);
-		*/
-
 		// TODO: Do we need this?
     	Runtime r = Runtime.getRuntime();
     	r.addShutdownHook(new Thread(){  
