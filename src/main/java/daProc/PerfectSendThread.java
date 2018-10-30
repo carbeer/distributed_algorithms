@@ -11,12 +11,12 @@ import utils.Peer;
 public class PerfectSendThread extends Thread {
 
 	private DatagramSocket socket;
-	private ArrayList<Peer> dst_peer;
+	private ArrayList<Peer> peers;
 	Message message;
 	
-	public PerfectSendThread(Message msg, ArrayList<Peer> dst_peer, DatagramSocket socket) {
+	public PerfectSendThread(Message msg, ArrayList<Peer> peers, DatagramSocket socket) {
 		this.message = msg;
-		this.dst_peer = dst_peer;
+		this.peers = peers;
 		this.socket = socket;
 	}
 	
@@ -29,7 +29,7 @@ public class PerfectSendThread extends Thread {
         while (true) {
             sendBuffer = Integer.toString(message.getSn()).getBytes();
 
-            for (Peer peer : this.dst_peer) {
+            for (Peer peer : this.peers) {
                 DatagramPacket packet = new DatagramPacket(sendBuffer, sendBuffer.length, peer.inetAddress, peer.port);
                 try {
                     socket.send(packet);
