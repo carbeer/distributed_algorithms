@@ -1,8 +1,14 @@
 package daProc;
 
 import java.io.*;
+import java.lang.reflect.Array;
 import java.net.DatagramSocket;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import utils.Peer;
 
 
@@ -11,33 +17,38 @@ public class Process {
 	final String ip;
 	final int port;
 	final String[] extraParams;
-	DatagramSocket socket;
+	static DatagramSocket socket;
 	static volatile boolean crashed;
 	static volatile boolean start_sending;
 	int seqNumber;
 	ArrayList<Peer> peers;
+	HashMap<String, Integer> idFromAddress;
 	static private String logs;
+	final static Logger LOGGER = Logger.getLogger(FIFOBroadcast.class.getName());
+
+
 
 	// Never use the FileWriter until the process crashes.
-	FileWriter writer;
+	static FileWriter writer;
 	// Add logs to write to here.
 
 	public Process(String[] args) {
 		// Parse command line arguments
-		this.id = Integer.valueOf(args[1]);
-		String membership = args[2];
+		this.id = Integer.valueOf(args[0]);
+		String membership = args[1];
 
 		// Check whether extra parameters were given as command line arguments
 		if (args.length > 2) {
-			extraParams = new String[args.length-3];
-			for (int i = 3; i < args.length; i++) {
-				extraParams[i-3] = args[i];
+			extraParams = new String[args.length-2];
+			for (int i = 2; i < args.length; i++) {
+				extraParams[i-2] = args[i];
 			}
 		} else {
 			extraParams = null;
 		}
 
-		File membershipPath = new File(System.getProperty("user.dir") + "/src/main/java/daProc/" + membership + ".txt");
+		this.idFromAddress = new HashMap<>();
+		File membershipPath = new File(System.getProperty("user.dir") + "\\" + membership);
 		String[] processParam = readMembership(membershipPath, id);
 		this.ip = processParam[1];
 		this.port = Integer.valueOf(processParam[2]);
@@ -58,6 +69,17 @@ public class Process {
 			System.out.println("Error while creating the file writer");
 			e.printStackTrace();
 		}
+	}
+
+	public static void writeLogsToFile() {
+		try {
+			writer.write(logs);
+			logs = "";
+			LOGGER.log(Level.INFO, "Wrote logs.");
+		} catch(IOException e) {
+			e.printStackTrace();
+		}
+
 	}
 
 	public static void writeLogLine(String s) {
@@ -111,16 +133,10 @@ public class Process {
 		return port;
 	}
 
-	//set crash to true
-	public void crash() {
-		this.socket.close();
-	}
 
-	
-	//HELPERS
-	
-	//parses the peers from the membership file
-	public static ArrayList<Peer> getPeers(File f, int procID) {
+	// TODO: Merge with readMembership
+	// Parses the peers from the membership file and create idFromAddress HashMap
+	public ArrayList<Peer> getPeers(File f, int procID) {
 		ArrayList<Peer> initPeers = new ArrayList<Peer>();
 		try{
 			BufferedReader b = new BufferedReader(new FileReader(f));
@@ -129,6 +145,7 @@ public class Process {
 			while ((line = b.readLine()) != null) {
 				splitted = line.split("\\s+");
 				if (Integer.valueOf(splitted[0]) != procID && splitted.length == 3) {
+					this.idFromAddress.put(splitted[1], Integer.parseInt(splitted[0]));
 					initPeers.add(new Peer(splitted[1], Integer.valueOf(splitted[2])));
 				}
 			}
@@ -157,5 +174,4 @@ public class Process {
         }
 		return null;
 	}
-    
 }

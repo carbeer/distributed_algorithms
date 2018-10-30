@@ -1,33 +1,44 @@
 package daProc;
 
+import utils.Message;
+
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 //this class corresponds to best effort/perfect link receiver that will deliver the message once
 //this class merely receive messages and write its activity to the log file
 public class FIFOReceiverThread extends Thread {
 
 	public FIFOBroadcast process;
+	final static Logger LOGGER = Logger.getLogger(FIFOBroadcast.class.getName());
+
+	// messages that are
+	int[][][] urb_ack;
+	HashSet<Message> urb_pending;
 	
 	public FIFOReceiverThread(FIFOBroadcast process) {
+		LOGGER.log(Level.INFO, "Creating instance of FIFOReceiverThread now");
 		this.process = process;
 	}
 	
 	//follows from page 83 of the book
-	public void bebDeliver(int[] message) {
+	public void bebDeliver(Message message) {
         
-        //if not already acked, ack it
-		if (process.urb_ack[message[0]][message[1]][process.getId()] != 1) {
-			process.urb_ack[message[0]][message[1]][process.getId()] = 1;
+        //if not already acked, urb_ack it
+
+		if (urb_ack[message.getSender()][message.getSn()][process.getId()] != 1) {
+			urb_ack[message.getSender()][message.getSn()][process.getId()] = 1;
 		}
 		
 		//add message to pending list and bebBroadcast it
-		ArrayList<int[]> pending = process.urb_messages_pending;
+		HashSet<Message> pending = urb_pending;
+
 		if(!pending.contains(message)) {
 			pending.add(message);
-			PerfectSendThread thread = new PerfectSendThread(message[0], message[1], process.getPeers(), process.getSocket());
+			PerfectSendThread thread = new PerfectSendThread(message, process.getPeers(), process.getSocket());
 			thread.start();
 		}
 	}
@@ -35,7 +46,7 @@ public class FIFOReceiverThread extends Thread {
 	//implements best effort broadcast
 	public void run() {
     	
-		ArrayList<int[]> messages_beb_delivered = new ArrayList<int[]>();
+		HashSet<Message> messages_beb_delivered = new HashSet<>();
 		DatagramSocket socket = process.getSocket();
 
         //Thread will be crashed/stopped from the main
@@ -43,18 +54,18 @@ public class FIFOReceiverThread extends Thread {
             byte[] receiveBuffer = new byte[256];
             DatagramPacket packet = new DatagramPacket(receiveBuffer, receiveBuffer.length);
             try {
-            	//listen continuously
                 socket.receive(packet);
-
                 // Read data from packet
-                int msg_seq = Integer.parseInt(new String(packet.getData(), 0, packet.getLength()));
+                String received = new String(packet.getData());
+                String[] splitted = received.split(":");
 
-				// Receive address of sender
-				InetAddress address = packet.getAddress();
+				// Get sender id
+                //int sender_id = process.idFromAddress.get(packet.getAddress().toString());
+                int initial_sender = Integer.parseInt(splitted[0]);
+                int msg_seq = Integer.parseInt(splitted[1]);
 
-                int sender_id = 3;
-				//TODO get sender_id from address
-				int[] message = {sender_id, msg_seq};
+
+				Message message = new Message(initial_sender, msg_seq);
                 
                 //perfect_link logic : deliver only if never delivered before
                 if (!messages_beb_delivered.contains(message)) {
