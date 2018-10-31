@@ -43,7 +43,7 @@ public class PerfectSendThread extends Thread {
             //slow down the infinite thread
         	try {
 				Thread.sleep(sleep_time);
-	        	sleep_time = 2*sleep_time;
+	        	sleep_time = 2 * sleep_time;
 			} catch (InterruptedException e1) {
 				e1.printStackTrace();
 			}

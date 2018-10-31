@@ -12,12 +12,10 @@ public class FIFOReceiverThread extends Thread {
 
 	final static Logger LOGGER = Logger.getLogger(FIFOBroadcast.class.getName());
 	public FIFOBroadcast process;
-	HashSet<Message> pending;
-	
+
 	public FIFOReceiverThread(FIFOBroadcast process) {
 		LOGGER.log(Level.INFO, "Creating instance of FIFOReceiverThread now");
 		this.process = process;
-		this.pending = new HashSet<>();
 	}
 
 
@@ -29,7 +27,11 @@ public class FIFOReceiverThread extends Thread {
             receiveBuffer = new byte[256];
             DatagramPacket packet = new DatagramPacket(receiveBuffer, receiveBuffer.length);
             try {
-                socket.receive(packet);
+               	socket.receive(packet);
+               	// Check whether the process is still alive.
+               	if (process.crashed) {
+               		break;
+				}
 				Message message = new Message(packet);
 				process.receiveHandler(message, packet.getAddress().toString());
             } catch (java.io.IOException e) {

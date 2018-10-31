@@ -4,31 +4,25 @@ import utils.Message;
 
 import java.util.*;
 import java.util.logging.Level;
-
-import sun.misc.Signal;
-import sun.misc.SignalHandler;
 import utils.Peer;
 
 public class FIFOBroadcast extends Process {
 	// Array of sorted queues of pending messages
-	HashMap<Integer, PriorityQueue<Message>> pending;
-	HashSet<Message> delivered;
-	boolean start_broadcast;
+	HashMap<Integer, PriorityQueue<Message>> pending = new HashMap<>();
+	HashSet<Message> delivered = new HashSet<>();;
 	// Amount of messages that shall be sent by this process
-	int nrMessages;
+	final int nrMessages;
 	int[] fifo_next;
 	
 	public FIFOBroadcast(String[] args) throws Exception {
 		super(args);
 		LOGGER.log(Level.INFO, "Creating instance of FIFOBroadcast now");
 		validateParams();
-		this.msgAck = new HashMap<>();
-		this.delivered = new HashSet<>();
 		this.nrMessages = Integer.parseInt(extraParams[0]);
+
 		// PriorityQueue of ordered messages can be accessed by the id of the origin process
-		this.pending = new HashMap<>();
 		for (Peer peer : peers) {
-			pending.put(peer.id, new PriorityQueue<>());
+			pending.put(peer.id, new PriorityQueue<Message>());
 		}
 
 		// FIFO keep track of next o deliver for each process
@@ -38,7 +32,6 @@ public class FIFOBroadcast extends Process {
 		new FIFOReceiverThread(this).start();
 
 		while(!crashed) {
-
 			if (start_broadcast && this.nrMessages >= seqNumber) {
 				Message msg = new Message(id, seqNumber);
 				pending.get(msg.getOrigin()).add(msg);
@@ -96,12 +89,13 @@ public class FIFOBroadcast extends Process {
     }
 
     // TODO: Think about how we could parallelize the processing of incoming messages --> Distinguish by read/ write access for Threads?
-	public void receiveHandler(Message message, String receivedFrom) {
+	public synchronized void receiveHandler(Message message, String receivedFrom) {
+		System.out.println(Thread.currentThread() + " is running");
 		// Verify whether the message is new for the current process
 		if(!pending.get(message.getOrigin()).contains(message) && !delivered.contains(message)) {
 			// Add message to the list of pending messages
 			pending.get(message.getOrigin()).add(message);
-			msgAck.put(message, new HashSet<>());
+			msgAck.put(message, new HashSet<String>());
 			// Add self to list of acked processes
 			msgAck.get(message).add(ip);
 			// Start broadcasting the message to others
@@ -119,30 +113,11 @@ public class FIFOBroadcast extends Process {
     public static void main(String []args) {
 		LOGGER.log(Level.FINE, "Entering the main method of the FIFOBroadcast");
 		try {
-			FIFOBroadcast process = new FIFOBroadcast(args);
+			new FIFOBroadcast(args);
 		} catch (Exception e ) {
 			e.printStackTrace();
+			System.exit(0);
 		}
-
-		// TODO: Do we need this?
-    	Runtime r = Runtime.getRuntime();
-    	r.addShutdownHook(new Thread(){  
-			public void run(){
-				crash();
-			}
-    	});
-
-		Signal.handle(new Signal("INT"), new SignalHandler() {
-			public void handle(Signal sig) {
-				crash();
-			}
-		});
-
-		Signal.handle(new Signal("TERM"), new SignalHandler() {
-			public void handle(Signal sig) {
-				crash();
-			}
-		});
     }
 }
 

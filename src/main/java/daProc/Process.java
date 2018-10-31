@@ -10,6 +10,8 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import sun.misc.Signal;
+import sun.misc.SignalHandler;
 import utils.Message;
 import utils.Peer;
 
@@ -18,19 +20,20 @@ public class Process {
 	final int id;
 	final String ip;
 	final int port;
+	static boolean start_broadcast;
 	final String[] extraParams;
 	static DatagramSocket socket;
-	static volatile boolean crashed;
-	int seqNumber;
+	static volatile boolean crashed = false;
+	int seqNumber = 1;
 	ArrayList<Peer> peers;
 	// Lock for msgAck
 	private static final Lock lock = new ReentrantLock();
-	static volatile HashMap<Message, HashSet<String>>  msgAck;
-	static private String logs;
+	static volatile HashMap<Message, HashSet<String>>  msgAck = new HashMap<>();;
+	static private String logs = "";
 	static FileWriter writer;
 	final static Logger LOGGER = Logger.getLogger(FIFOBroadcast.class.getName());
 
-	public Process(String[] args) {
+	public Process(String[] args) throws Exception {
 		// Parse command line arguments
 		this.id = Integer.valueOf(args[0]);
 		String membership = args[1];
@@ -44,31 +47,49 @@ public class Process {
 		} else {
 			extraParams = null;
 		}
-
 		File membershipPath = new File(System.getProperty("user.dir") + File.separator + membership);
 		String[] processParam = readMembership(membershipPath, id);
 		this.ip = processParam[1];
 		this.port = Integer.valueOf(processParam[2]);
 		this.peers = getPeers(membershipPath, id);
-		crashed = false;
-		this.seqNumber = 1;
-
 		try {
 			this.socket = new DatagramSocket(this.port);
 		} catch (java.net.SocketException e) {
-			System.out.println("Error while creating a socket at port " + this.port);
-			e.printStackTrace();
-		}
+			// Doesn't make sense to be handled
+            throw e;
+        }
 		try {
 			File directory = new File(System.getProperty("user.dir") + File.separator + "logs");
 			if (! directory.exists()) {
 				directory.mkdir();
-				this.writer = new FileWriter(directory + File.separator + "da_proc_" + this.id);
 			}
+			writer = new FileWriter(directory + File.separator + "da_proc_" + this.id);
 		} catch (java.io.IOException e) {
 			System.out.println("Error while creating the file writer");
 			e.printStackTrace();
 		}
+
+		// Signal handlers
+		Signal.handle(new Signal("USR2"), new SignalHandler() {
+			public void handle(Signal sig) {
+				LOGGER.log(Level.INFO, "Received USR2 signal");
+				start_broadcast = true;
+			}
+		});
+
+		Signal.handle(new Signal("INT"), new SignalHandler() {
+			public void handle(Signal sig) {
+				LOGGER.log(Level.INFO, "Received INT signal");
+				crash();
+			}
+		});
+
+		Signal.handle(new Signal("TERM"), new SignalHandler() {
+			public void handle(Signal sig) {
+				LOGGER.log(Level.INFO, "Received TERM signal");
+				crash();
+			}
+		});
 	}
 
 	public static Lock getLock() {
@@ -78,11 +99,18 @@ public class Process {
 	public static void crash() {
 		LOGGER.log(Level.SEVERE, "Process has been crashed, cleaning up.");
 		crashed = true;
-		writeLogsToFile();
-		socket.close();
-		LOGGER.log(Level.SEVERE, "Exiting now.");
-		System.exit(0);
+		try {
+            writeLogsToFile();
+        } catch(Exception e) {
+		    LOGGER.log(Level.SEVERE, "Couldn't write the logs... We're screwed!");
+		    e.printStackTrace();
+        } finally {
+            socket.close();
+            LOGGER.log(Level.SEVERE, "Exiting now.");
+            System.exit(0);
+        }
 	}
+
 
 	public static void writeLogsToFile() {
 		try {
@@ -95,7 +123,8 @@ public class Process {
 
 	}
 
-	public static void writeLogLine(String s) {
+	// Allow only one Thread to write at a time
+	public static synchronized void writeLogLine(String s) {
 		if (!crashed) {
 			logs = logs + s + "\n";
 			System.out.println(s);
@@ -152,5 +181,29 @@ public class Process {
 
 	public static boolean isCrashed() {
 		return crashed;
+	}
+
+	@SuppressWarnings("deprecation")
+	class SigHandler implements SignalHandler {
+		Process p;
+
+		private SigHandler(Process p) {
+			super();
+			this.p = p;
+		}
+
+		@Override
+		public void handle(Signal signal) {
+			LOGGER.log(Level.INFO, "Handling signal: %s\n", signal.toString());
+
+			switch(signal.getName()) {
+				case "USR2":
+					start_broadcast = true;
+					break;
+				case "TERM":
+				case "INT":
+					crash();
+			}
+		}
 	}
 }
