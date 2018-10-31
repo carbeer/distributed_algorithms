@@ -28,6 +28,7 @@ public class FIFOBroadcast extends Process {
 
 		// FIFO keep track of next o deliver for each process
 		// TODO: Quite ugly like this as [0] is unused --> Potentially change
+		//Guillaume : that's why I used to use it, I don't get the 2 though? Why not +1 only?
 		this.fifo_next = new int[peers.size()+2];
 		Arrays.fill(fifo_next, 1);
 
@@ -50,6 +51,10 @@ public class FIFOBroadcast extends Process {
 				seqNumber++;
 				// TODO: Since the delivery method is in this loop as well, sleeping the entire thread might make us not
 				// TODO (cont'd): deliver some messages if the process is crashed in the meantime --> Fix somehow
+				
+				// Guillaume : we could clean this up by running a trytodeliver method in the crash() method?
+				// Then we will ensure that's pending to deliver will be handled
+				
 				// Broadcast a new message every .5 seconds.
 				try {
 					Thread.sleep(500);
@@ -69,14 +74,20 @@ public class FIFOBroadcast extends Process {
 	private void validateParams() throws Exception {
 		if (extraParams == null) {
 			throw new Exception("Please provide the number of messages as argument for FIFOBroadcast");
-		} else if (extraParams.length != 1) {
+		} 
+		//Guillaume : we don t need the elif as we will just disregard addtional parameters right?
+		//and we need to be able to input other arguments for assignment 2 anyways
+		else if (extraParams.length != 1) {
 			throw new Exception("You passed invalid arguments: " + Arrays.toString(extraParams));
 		}
+		
 	}
 
 	public void broadcast(Message msg) {
+		if (!crashed) {
 		PerfectSendThread thread = new PerfectSendThread(msg, getPeers(), getSocket());
 		thread.start();
+		}
     }
 
     // Corresponds to majorityAck
@@ -99,6 +110,8 @@ public class FIFOBroadcast extends Process {
     }
 
     // TODO: Think about how we could parallelize the processing of incoming messages --> Distinguish by read/ write access for Threads?
+    //Guillaume : why do we need that? The receive buffer enables us to keep a list of messages to process
+    
 	public synchronized void receiveHandler(Message message, String receivedFrom) {
 		// Verify whether the message is new for the current process
 		if(!pending.get(message.getOrigin()).contains(message) && !delivered.contains(message)) {
@@ -106,6 +119,11 @@ public class FIFOBroadcast extends Process {
 			pending.get(message.getOrigin()).add(message);
 			msgAck.put(message, new HashSet<String>());
 			// Add self to list of acked processes
+			
+			//Guillaume : !! I may have misunderstood your code here. But we need to ack this message ourselves, yes, 
+			//but then we also need to ack for the process that we received this message from since we know that it has received it as well
+			//Edit : My bad, you did this below! :P
+		
 			msgAck.get(message).add(ip);
 			// Start broadcasting the message to others
 			broadcast(message);

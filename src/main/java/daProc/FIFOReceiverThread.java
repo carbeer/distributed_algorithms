@@ -23,12 +23,15 @@ public class FIFOReceiverThread extends Thread {
 		DatagramSocket socket = process.getSocket();
 		byte[] receiveBuffer;
 
+		
 		while (!process.crashed) {
             receiveBuffer = new byte[256];
             DatagramPacket packet = new DatagramPacket(receiveBuffer, receiveBuffer.length);
             try {
                	socket.receive(packet);
                	// Check whether the process is still alive.
+               	
+               	//Guillaume : why break? We are still allowed to finish the current run if the process is crashed right?
                	if (process.crashed) {
                		break;
 				}
