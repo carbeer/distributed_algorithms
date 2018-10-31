@@ -24,17 +24,27 @@ public class FIFOBroadcast extends Process {
 		for (Peer peer : peers) {
 			pending.put(peer.id, new PriorityQueue<Message>());
 		}
+		pending.put(id, new PriorityQueue<Message>());
 
 		// FIFO keep track of next o deliver for each process
-		this.fifo_next = new int[peers.size()];
+		// TODO: Quite ugly like this as [0] is unused --> Potentially change
+		this.fifo_next = new int[peers.size()+2];
 		Arrays.fill(fifo_next, 1);
 
 		new FIFOReceiverThread(this).start();
+
+
+		/*
+		// Only for testing purposes since WSL doesn't allow to send signals
+		Thread.sleep(10000);
+		start_broadcast = true;
+		*/
 
 		while(!crashed) {
 			if (start_broadcast && this.nrMessages >= seqNumber) {
 				Message msg = new Message(id, seqNumber);
 				pending.get(msg.getOrigin()).add(msg);
+				msgAck.put(msg, new HashSet<String>());
 				msgAck.get(msg).add(ip);
 				broadcast(msg);
 				seqNumber++;
@@ -50,9 +60,9 @@ public class FIFOBroadcast extends Process {
 
 			// Check whether any message can be delivered
 			for (Peer peer : peers) {
-				PriorityQueue<Message> pq = pending.get(peer.id);
-				tryToDeliver(pq);
+				tryToDeliver(pending.get(peer.id));
 			}
+			tryToDeliver(pending.get(id));
 		}
 	}
 
@@ -76,7 +86,7 @@ public class FIFOBroadcast extends Process {
 		}
 		Message msg = pq.peek();
 		while (true) {
-			if ((msgAck.get(msg).size() > peers.size()/2) && (msg.getSn() == fifo_next[msg.getOrigin()] - 1)) {
+			if ((msgAck.get(msg).size() > peers.size()/2) && (msg.getSn() == fifo_next[msg.getOrigin()])) {
 				// Deliver the message
 				fifo_next[msg.getOrigin()]++;
 				writeLogLine("d " + msg.getOrigin() + " " + msg.getSn());
@@ -90,7 +100,6 @@ public class FIFOBroadcast extends Process {
 
     // TODO: Think about how we could parallelize the processing of incoming messages --> Distinguish by read/ write access for Threads?
 	public synchronized void receiveHandler(Message message, String receivedFrom) {
-		System.out.println(Thread.currentThread() + " is running");
 		// Verify whether the message is new for the current process
 		if(!pending.get(message.getOrigin()).contains(message) && !delivered.contains(message)) {
 			// Add message to the list of pending messages

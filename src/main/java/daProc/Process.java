@@ -63,7 +63,7 @@ public class Process {
 			if (! directory.exists()) {
 				directory.mkdir();
 			}
-			writer = new FileWriter(directory + File.separator + "da_proc_" + this.id);
+			writer = new FileWriter(directory + File.separator + "da_proc_" + this.id + ".txt");
 		} catch (java.io.IOException e) {
 			System.out.println("Error while creating the file writer");
 			e.printStackTrace();
@@ -117,6 +117,7 @@ public class Process {
 			writer.write(logs);
 			logs = "";
 			LOGGER.log(Level.INFO, "Wrote logs.");
+			writer.close();
 		} catch(IOException e) {
 			e.printStackTrace();
 		}
