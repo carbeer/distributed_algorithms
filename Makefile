@@ -7,7 +7,7 @@ JVM=java
 #
 JAVA_CLASSES:=$(patsubst %.java,%.class,$(JAVA_FILES))
 COMPILED_TARGET:=.
-MAIN:=da_proc
+MAIN:=Da_proc
 
 .PHONY: classes
 LIST:=
