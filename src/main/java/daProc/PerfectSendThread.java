@@ -10,9 +10,10 @@ import utils.Peer;
 //this class corresponds to perfect link broadcast that will send the message indefinitely
 public class PerfectSendThread extends Thread {
 
-	private DatagramSocket socket;
-	private ArrayList<Peer> peers;
+	DatagramSocket socket;
+	ArrayList<Peer> peers;
 	Message message;
+	int sleep_time = 50;
 	
 	public PerfectSendThread(Message msg, ArrayList<Peer> peers, DatagramSocket socket) {
 		this.message = msg;
@@ -22,7 +23,7 @@ public class PerfectSendThread extends Thread {
 	
     public void run() {
         byte[] sendBuffer;
-        int sleep_time = 1000;
+        
 
         //Thread will be crashed/stopped from the main
         //while the thread runs, send the message corresponding to the current seq_num of the parent process

@@ -17,8 +17,8 @@ import utils.Peer;
 
 
 public class Process {
-	final int id;
-	final String ip;
+	static int id;
+	static String ip;
 	final int port;
 	static boolean start_broadcast;
 	final String[] extraParams;
@@ -28,7 +28,7 @@ public class Process {
 	ArrayList<Peer> peers;
 	// Lock for msgAck
 	private static final Lock lock = new ReentrantLock();
-	static volatile HashMap<Message, HashSet<String>>  msgAck = new HashMap<>();;
+	private static volatile HashMap<Message, HashSet<String>>  msgAck = new HashMap<>();;
 	static private String logs = "";
 	static FileWriter writer;
 	final static Logger LOGGER = Logger.getLogger(FIFOBroadcast.class.getName());
@@ -183,6 +183,19 @@ public class Process {
 	public static boolean isCrashed() {
 		return crashed;
 	}
+	
+    public static synchronized void addAck(Message msg, String receivedFrom) {
+    	msgAck.get(msg).add(receivedFrom);
+    }
+    
+    public static synchronized void initAck(Message msg) {
+    	msgAck.put(msg, new HashSet<>());
+    }
+    
+    public static HashSet<String> getAck(Message msg) {
+    	return msgAck.get(msg);
+    }
+    
 
 	@SuppressWarnings("deprecation")
 	class SigHandler implements SignalHandler {

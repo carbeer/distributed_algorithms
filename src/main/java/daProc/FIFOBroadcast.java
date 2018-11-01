@@ -8,11 +8,11 @@ import utils.Peer;
 
 public class FIFOBroadcast extends Process {
 	// Array of sorted queues of pending messages
-	HashMap<Integer, PriorityQueue<Message>> pending = new HashMap<>();
-	HashSet<Message> delivered = new HashSet<>();;
+	private static HashMap<Integer, PriorityQueue<Message>> pending = new HashMap<>();
+	static HashSet<Message> delivered = new HashSet<>();
+	static HashMap<Integer, Integer> fifoNext = new HashMap<>();
 	// Amount of messages that shall be sent by this process
 	final int nrMessages;
-	int[] fifo_next;
 	
 	public FIFOBroadcast(String[] args) throws Exception {
 		super(args);
@@ -23,14 +23,11 @@ public class FIFOBroadcast extends Process {
 		// PriorityQueue of ordered messages can be accessed by the id of the origin process
 		for (Peer peer : peers) {
 			pending.put(peer.id, new PriorityQueue<Message>());
+			fifoNext.put(peer.id, 1);
 		}
 		pending.put(id, new PriorityQueue<Message>());
-
-		// FIFO keep track of next o deliver for each process
-		// TODO: Quite ugly like this as [0] is unused --> Potentially change
-		//Guillaume : that's why I used to use it, I don't get the 2 though? Why not +1 only?
-		this.fifo_next = new int[peers.size()+2];
-		Arrays.fill(fifo_next, 1);
+		fifoNext.put(id, 1);
+		
 
 		new FIFOReceiverThread(this).start();
 
@@ -42,32 +39,22 @@ public class FIFOBroadcast extends Process {
 		*/
 
 		while(!crashed) {
-			if (start_broadcast && this.nrMessages >= seqNumber) {
+			if (!start_broadcast) {
+				Thread.sleep(100);
+				continue;
+			}
+			
+			if (this.nrMessages >= seqNumber) {
 				Message msg = new Message(id, seqNumber);
-				pending.get(msg.getOrigin()).add(msg);
-				msgAck.put(msg, new HashSet<String>());
-				msgAck.get(msg).add(ip);
 				broadcast(msg);
 				seqNumber++;
-				// TODO: Since the delivery method is in this loop as well, sleeping the entire thread might make us not
-				// TODO (cont'd): deliver some messages if the process is crashed in the meantime --> Fix somehow
-				
-				// Guillaume : we could clean this up by running a trytodeliver method in the crash() method?
-				// Then we will ensure that's pending to deliver will be handled
-				
-				// Broadcast a new message every .5 seconds.
-				try {
-					Thread.sleep(500);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
 			}
 
 			// Check whether any message can be delivered
 			for (Peer peer : peers) {
-				tryToDeliver(pending.get(peer.id));
+				tryToDeliver(getPending(peer.id));
 			}
-			tryToDeliver(pending.get(id));
+			tryToDeliver(getPending(id));
 		}
 	}
 
@@ -84,8 +71,9 @@ public class FIFOBroadcast extends Process {
 	}
 
 	public void broadcast(Message msg) {
+		LOGGER.log(Level.INFO, "Broadcasting a mew message");
 		if (!crashed) {
-		PerfectSendThread thread = new PerfectSendThread(msg, getPeers(), getSocket());
+		PerfectSendFIFO thread = new PerfectSendFIFO(msg, getPeers(), getSocket());
 		thread.start();
 		}
     }
@@ -97,9 +85,9 @@ public class FIFOBroadcast extends Process {
 		}
 		Message msg = pq.peek();
 		while (true) {
-			if ((msgAck.get(msg).size() > peers.size()/2) && (msg.getSn() == fifo_next[msg.getOrigin()])) {
+			if ((getAck(msg).size() > peers.size()/2) && (msg.getSn() == fifoNext.get(msg.getOrigin()))) {
 				// Deliver the message
-				fifo_next[msg.getOrigin()]++;
+				fifoNext.put(msg.getOrigin(), fifoNext.get(msg.getOrigin())+1);
 				writeLogLine("d " + msg.getOrigin() + " " + msg.getSn());
 				delivered.add(msg);
 				msg = pq.poll();
@@ -114,27 +102,31 @@ public class FIFOBroadcast extends Process {
     
 	public synchronized void receiveHandler(Message message, String receivedFrom) {
 		// Verify whether the message is new for the current process
-		if(!pending.get(message.getOrigin()).contains(message) && !delivered.contains(message)) {
+		if(!getPending(message.getOrigin()).contains(message) && !delivered.contains(message)) {
 			// Add message to the list of pending messages
-			pending.get(message.getOrigin()).add(message);
-			msgAck.put(message, new HashSet<String>());
+			addPending(message.getOrigin(), message);
+			initAck(message);
 			// Add self to list of acked processes
-			
-			//Guillaume : !! I may have misunderstood your code here. But we need to ack this message ourselves, yes, 
-			//but then we also need to ack for the process that we received this message from since we know that it has received it as well
-			//Edit : My bad, you did this below! :P
-		
-			msgAck.get(message).add(ip);
+			addAck(message, ip);
 			// Start broadcasting the message to others
 			broadcast(message);
 		}
 
 		// TODO: Since the data type is a set, it might be more efficient to just add it (without the prior if clause) --> Test later on or Google now
 		// The sendingProcess must know the message --> add to ack if not there yet
-		if (msgAck.get(message).contains(receivedFrom)) {
-			msgAck.get(message).add(receivedFrom);
+		if (getAck(message).contains(receivedFrom)) {
+			addAck(message, receivedFrom);
 		}
 	}
+	
+    public static synchronized void addPending(int origin, Message msg) {
+    	pending.get(origin).add(msg);
+    }
+    
+    
+    public static PriorityQueue<Message> getPending(int origin) {
+    	return pending.get(origin);
+    }
 
 
     public static void main(String []args) {
@@ -146,5 +138,7 @@ public class FIFOBroadcast extends Process {
 			System.exit(0);
 		}
     }
+    
+
 }
 
