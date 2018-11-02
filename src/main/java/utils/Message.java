@@ -48,7 +48,11 @@ public class Message implements Comparable<Message> {
 
     @Override
     public int compareTo(Message o) {
-        // TODO: Compare by sequenceNumber to make it feasible for the PriorityQueue. https://www.callicoder.com/java-priority-queue/
+        if (this.getSn() < o.getSn()) {
+            return  -1;
+        } else if (this.getSn() > o.getSn()) {
+            return 1;
+        }
         return 0;
     }
 }

@@ -26,8 +26,6 @@ public class Process {
 	static volatile boolean crashed = false;
 	int seqNumber = 1;
 	ArrayList<Peer> peers;
-	// Lock for msgAck
-	private static final Lock lock = new ReentrantLock();
 	private static volatile HashMap<Message, HashSet<String>>  msgAck = new HashMap<>();;
 	static private String logs = "";
 	static FileWriter writer;
@@ -59,11 +57,8 @@ public class Process {
             throw e;
         }
 		try {
-			File directory = new File(System.getProperty("user.dir") + File.separator + "logs");
-			if (! directory.exists()) {
-				directory.mkdir();
-			}
-			writer = new FileWriter(directory + File.separator + "da_proc_" + this.id + ".txt");
+			File directory = new File(System.getProperty("user.dir"));
+			writer = new FileWriter(directory + File.separator + "da_proc_" + this.id + ".out");
 		} catch (java.io.IOException e) {
 			System.out.println("Error while creating the file writer");
 			e.printStackTrace();
@@ -90,10 +85,6 @@ public class Process {
 				crash();
 			}
 		});
-	}
-
-	public static Lock getLock() {
-		return lock;
 	}
 
 	public static void crash() {
@@ -189,7 +180,7 @@ public class Process {
     }
     
     public static synchronized void initAck(Message msg) {
-    	msgAck.put(msg, new HashSet<>());
+    	msgAck.put(msg, new HashSet<String>());
     }
     
     public static HashSet<String> getAck(Message msg) {

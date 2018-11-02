@@ -31,18 +31,7 @@ public class FIFOBroadcast extends Process {
 
 		new FIFOReceiverThread(this).start();
 
-
-		/*
-		// Only for testing purposes since WSL doesn't allow to send signals
-		Thread.sleep(10000);
-		start_broadcast = true;
-		*/
-
 		while(!crashed) {
-			if (!start_broadcast) {
-				Thread.sleep(100);
-				continue;
-			}
 			
 			if (this.nrMessages >= seqNumber) {
 				Message msg = new Message(id, seqNumber);
@@ -71,11 +60,8 @@ public class FIFOBroadcast extends Process {
 	}
 
 	public void broadcast(Message msg) {
-		LOGGER.log(Level.INFO, "Broadcasting a mew message");
-		if (!crashed) {
 		PerfectSendFIFO thread = new PerfectSendFIFO(msg, getPeers(), getSocket());
 		thread.start();
-		}
     }
 
     // Corresponds to majorityAck
@@ -84,6 +70,7 @@ public class FIFOBroadcast extends Process {
 			return;
 		}
 		Message msg = pq.peek();
+		LOGGER.log(Level.INFO, "Trying to deliver message with Sn " + msg.getSn());
 		while (true) {
 			if ((getAck(msg).size() > peers.size()/2) && (msg.getSn() == fifoNext.get(msg.getOrigin()))) {
 				// Deliver the message
@@ -103,6 +90,7 @@ public class FIFOBroadcast extends Process {
 	public synchronized void receiveHandler(Message message, String receivedFrom) {
 		// Verify whether the message is new for the current process
 		if(!getPending(message.getOrigin()).contains(message) && !delivered.contains(message)) {
+			System.out.println("Received an entirely new message from " + message.getOrigin());
 			// Add message to the list of pending messages
 			addPending(message.getOrigin(), message);
 			initAck(message);

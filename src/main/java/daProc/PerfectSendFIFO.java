@@ -19,9 +19,9 @@ public class PerfectSendFIFO extends PerfectSendThread {
     @Override
     public void run() {
         byte[] sendBuffer;
-        
+
         // Wait for the broadcast of the previous message to begin
-        while(FIFOBroadcast.getAck(new Message(message.getOrigin(), message.getSn()-1)) == null || message.getSn() == 1) {
+        while(FIFOBroadcast.getAck(new Message(message.getOrigin(), message.getSn()-1)) == null && message.getSn() != 1) {
         	try {
         		Thread.sleep(100);
         		continue;
@@ -29,6 +29,7 @@ public class PerfectSendFIFO extends PerfectSendThread {
         		e.printStackTrace();
         	}
         }
+
         //Thread will be crashed/stopped from the main
         //while the thread runs, send the message corresponding to the current seq_num of the parent process
         while (true) {
@@ -47,6 +48,7 @@ public class PerfectSendFIFO extends PerfectSendThread {
                     e.printStackTrace();
                 }
             }
+            if(message.getOrigin() == FIFOBroadcast.id)
             Process.writeLogLine ("b " + message.getSn());
 
             //slow down the infinite thread

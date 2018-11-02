@@ -31,7 +31,6 @@ public class FIFOReceiverThread extends Thread {
                	socket.receive(packet);
                	// Check whether the process is still alive.
                	
-               	//Guillaume : why break? We are still allowed to finish the current run if the process is crashed right?
                	if (process.crashed) {
                		break;
 				}

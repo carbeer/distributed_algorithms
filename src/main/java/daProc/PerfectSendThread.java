@@ -3,6 +3,7 @@ package daProc;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.util.ArrayList;
+import java.util.logging.Level;
 
 import utils.Message;
 import utils.Peer;
@@ -19,11 +20,11 @@ public class PerfectSendThread extends Thread {
 		this.message = msg;
 		this.peers = peers;
 		this.socket = socket;
+		FIFOBroadcast.LOGGER.log(Level.INFO, "Instantiating PerfectSendThread");
 	}
 	
     public void run() {
         byte[] sendBuffer;
-        
 
         //Thread will be crashed/stopped from the main
         //while the thread runs, send the message corresponding to the current seq_num of the parent process
