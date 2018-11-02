@@ -5,8 +5,6 @@ import java.net.DatagramSocket;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -26,10 +24,10 @@ public class Process {
 	static volatile boolean crashed = false;
 	int seqNumber = 1;
 	ArrayList<Peer> peers;
-	private static volatile HashMap<Message, HashSet<String>>  msgAck = new HashMap<>();;
+	private static volatile HashMap<Message, HashSet<Integer>>  msgAck = new HashMap<>();;
 	static private String logs = "";
 	static FileWriter writer;
-	final static Logger LOGGER = Logger.getLogger(FIFOBroadcast.class.getName());
+	public final static Logger LOGGER = Logger.getLogger(Process.class.getName());
 
 	public Process(String[] args) throws Exception {
 		// Parse command line arguments
@@ -175,40 +173,15 @@ public class Process {
 		return crashed;
 	}
 	
-    public static synchronized void addAck(Message msg, String receivedFrom) {
-    	msgAck.get(msg).add(receivedFrom);
+    public static synchronized void addAck(Message msg) {
+    	msgAck.get(msg).add(msg.getPeerID());
     }
     
     public static synchronized void initAck(Message msg) {
-    	msgAck.put(msg, new HashSet<String>());
+    	msgAck.put(msg, new HashSet<Integer>());
     }
     
-    public static HashSet<String> getAck(Message msg) {
+    public static HashSet<Integer> getAck(Message msg) {
     	return msgAck.get(msg);
     }
-    
-
-	@SuppressWarnings("deprecation")
-	class SigHandler implements SignalHandler {
-		Process p;
-
-		private SigHandler(Process p) {
-			super();
-			this.p = p;
-		}
-
-		@Override
-		public void handle(Signal signal) {
-			LOGGER.log(Level.INFO, "Handling signal: %s\n", signal.toString());
-
-			switch(signal.getName()) {
-				case "USR2":
-					start_broadcast = true;
-					break;
-				case "TERM":
-				case "INT":
-					crash();
-			}
-		}
-	}
 }

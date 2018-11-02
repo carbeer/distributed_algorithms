@@ -18,10 +18,11 @@ public class PerfectSendFIFO extends PerfectSendThread {
     
     @Override
     public void run() {
+        boolean firstRun = true;
         byte[] sendBuffer;
 
         // Wait for the broadcast of the previous message to begin
-        while(FIFOBroadcast.getAck(new Message(message.getOrigin(), message.getSn()-1)) == null && message.getSn() != 1) {
+        while(FIFOBroadcast.getAck(new Message(message.getOrigin(), message.getSn()-1, FIFOBroadcast.id)) == null && message.getSn() != 1) {
         	try {
         		Thread.sleep(100);
         		continue;
@@ -30,27 +31,35 @@ public class PerfectSendFIFO extends PerfectSendThread {
         	}
         }
 
+        message.setPeerID(FIFOBroadcast.id);
+        sendBuffer = (Integer.toString(message.getOrigin()) + ":" + Integer.toString(message.getSn()) + ":" + Integer.toString(message.getPeerID())).getBytes();
+
         //Thread will be crashed/stopped from the main
         //while the thread runs, send the message corresponding to the current seq_num of the parent process
         while (true) {
-            sendBuffer = (Integer.toString(message.getOrigin()) + ":" + Integer.toString(message.getSn())).getBytes();
 
-            FIFOBroadcast.addPending(FIFOBroadcast.id, message);
-			FIFOBroadcast.initAck(message);
-			FIFOBroadcast.addAck(message, FIFOBroadcast.ip);
-            
             for (Peer peer : this.peers) {
                 DatagramPacket packet = new DatagramPacket(sendBuffer, sendBuffer.length, peer.inetAddress, peer.port);
                 try {
                     socket.send(packet);
+                } catch(java.net.SocketException e) {
+                    Process.LOGGER.log(Level.WARNING, "Cannot send the message, the socket is closed");
                 } catch(java.io.IOException e) {
-                    System.out.println("Error while sending DatagramPacket");
+                    Process.LOGGER.log(Level.WARNING, "Error while sending DatagramPacket");
                     e.printStackTrace();
                 }
             }
-            if(message.getOrigin() == FIFOBroadcast.id)
-            Process.writeLogLine ("b " + message.getSn());
 
+            // TODO: Without the check for FIFOBroadcast.getAck(message) == null the broadcast order gets messed up from time to time. Why? Error somewhere else?
+            if(firstRun && FIFOBroadcast.getAck(message) == null) {
+                if (message.getOrigin() == FIFOBroadcast.id) {
+                    Process.writeLogLine("b " + message.getSn());
+                }
+                FIFOBroadcast.addPending(message);
+                FIFOBroadcast.initAck(message);
+                FIFOBroadcast.addAck(message);
+                firstRun = false;
+            }
             //slow down the infinite thread
         	try {
 				Thread.sleep(sleep_time);

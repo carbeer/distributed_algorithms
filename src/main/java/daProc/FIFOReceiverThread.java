@@ -10,11 +10,10 @@ import java.util.logging.Logger;
 // This class corresponds to fifoReceiver that will deliver the messages according the the URB logic
 public class FIFOReceiverThread extends Thread {
 
-	final static Logger LOGGER = Logger.getLogger(FIFOBroadcast.class.getName());
 	public FIFOBroadcast process;
 
 	public FIFOReceiverThread(FIFOBroadcast process) {
-		LOGGER.log(Level.INFO, "Creating instance of FIFOReceiverThread now");
+		Process.LOGGER.log(Level.FINE, "Creating instance of FIFOReceiverThread now");
 		this.process = process;
 	}
 
@@ -30,14 +29,13 @@ public class FIFOReceiverThread extends Thread {
             try {
                	socket.receive(packet);
                	// Check whether the process is still alive.
-               	
                	if (process.crashed) {
                		break;
 				}
 				Message message = new Message(packet);
-				process.receiveHandler(message, packet.getAddress().toString());
+				process.receiveHandler(message);
             } catch (java.io.IOException e) {
-                System.out.println("Error while receiving DatagramPacket");
+				Process.LOGGER.log(Level.WARNING, "Error while receiving DatagramPacket");
                 e.printStackTrace();
             }
         }

@@ -15,7 +15,6 @@ public class Peer {
         try {
             inetAddress = InetAddress.getByName(this.address);
         } catch (java.net.UnknownHostException e) {
-            System.out.println("Couldn't resolve address " + this.address);
             e.printStackTrace();
         }
     }

@@ -17,10 +17,10 @@ public class PerfectSendThread extends Thread {
 	int sleep_time = 50;
 	
 	public PerfectSendThread(Message msg, ArrayList<Peer> peers, DatagramSocket socket) {
-		this.message = msg;
+		this.message = msg.clone();
 		this.peers = peers;
 		this.socket = socket;
-		FIFOBroadcast.LOGGER.log(Level.INFO, "Instantiating PerfectSendThread");
+		FIFOBroadcast.LOGGER.log(Level.FINE, "Instantiating PerfectSendThread");
 	}
 	
     public void run() {
@@ -35,8 +35,10 @@ public class PerfectSendThread extends Thread {
                 DatagramPacket packet = new DatagramPacket(sendBuffer, sendBuffer.length, peer.inetAddress, peer.port);
                 try {
                     socket.send(packet);
+                } catch(java.net.SocketException e) {
+                    Process.LOGGER.log(Level.WARNING, "Cannot send the message, the socket is closed");
                 } catch(java.io.IOException e) {
-                    System.out.println("Error while sending DatagramPacket");
+                    Process.LOGGER.log(Level.WARNING, "Error while sending DatagramPacket");
                     e.printStackTrace();
                 }
             }

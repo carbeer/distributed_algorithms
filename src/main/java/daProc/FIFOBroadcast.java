@@ -4,7 +4,11 @@ import utils.Message;
 
 import java.util.*;
 import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import utils.Peer;
+
+import javax.swing.plaf.synth.SynthDesktopIconUI;
 
 public class FIFOBroadcast extends Process {
 	// Array of sorted queues of pending messages
@@ -16,7 +20,7 @@ public class FIFOBroadcast extends Process {
 	
 	public FIFOBroadcast(String[] args) throws Exception {
 		super(args);
-		LOGGER.log(Level.INFO, "Creating instance of FIFOBroadcast now");
+		LOGGER.log(Level.FINE, "Creating instance of FIFOBroadcast now");
 		validateParams();
 		this.nrMessages = Integer.parseInt(extraParams[0]);
 
@@ -32,9 +36,8 @@ public class FIFOBroadcast extends Process {
 		new FIFOReceiverThread(this).start();
 
 		while(!crashed) {
-			
 			if (this.nrMessages >= seqNumber) {
-				Message msg = new Message(id, seqNumber);
+				Message msg = new Message(id, seqNumber, id);
 				broadcast(msg);
 				seqNumber++;
 			}
@@ -65,13 +68,9 @@ public class FIFOBroadcast extends Process {
     }
 
     // Corresponds to majorityAck
-    public void tryToDeliver(PriorityQueue<Message> pq) {
-		if (pq.isEmpty()) {
-			return;
-		}
-		Message msg = pq.peek();
-		LOGGER.log(Level.INFO, "Trying to deliver message with Sn " + msg.getSn());
-		while (true) {
+    public synchronized void tryToDeliver(PriorityQueue<Message> pq) {
+		Message msg = pq.poll();
+		for (int i=0; i<pq.size();i++) {
 			if ((getAck(msg).size() > peers.size()/2) && (msg.getSn() == fifoNext.get(msg.getOrigin()))) {
 				// Deliver the message
 				fifoNext.put(msg.getOrigin(), fifoNext.get(msg.getOrigin())+1);
@@ -85,30 +84,27 @@ public class FIFOBroadcast extends Process {
     }
 
     // TODO: Think about how we could parallelize the processing of incoming messages --> Distinguish by read/ write access for Threads?
-    //Guillaume : why do we need that? The receive buffer enables us to keep a list of messages to process
-    
-	public synchronized void receiveHandler(Message message, String receivedFrom) {
+	public synchronized void receiveHandler(Message message) {
 		// Verify whether the message is new for the current process
 		if(!getPending(message.getOrigin()).contains(message) && !delivered.contains(message)) {
-			System.out.println("Received an entirely new message from " + message.getOrigin());
 			// Add message to the list of pending messages
-			addPending(message.getOrigin(), message);
+			addPending(message);
 			initAck(message);
 			// Add self to list of acked processes
-			addAck(message, ip);
+			addAck(message);
 			// Start broadcasting the message to others
 			broadcast(message);
 		}
 
 		// TODO: Since the data type is a set, it might be more efficient to just add it (without the prior if clause) --> Test later on or Google now
 		// The sendingProcess must know the message --> add to ack if not there yet
-		if (getAck(message).contains(receivedFrom)) {
-			addAck(message, receivedFrom);
+		if (!getAck(message).contains(message.getPeerID())) {
+			addAck(message);
 		}
 	}
 	
-    public static synchronized void addPending(int origin, Message msg) {
-    	pending.get(origin).add(msg);
+    public static synchronized void addPending(Message msg) {
+    	pending.get(msg.getOrigin()).add(msg);
     }
     
     
