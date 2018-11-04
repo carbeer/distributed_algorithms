@@ -4,8 +4,6 @@ import utils.Message;
 
 import java.util.*;
 import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import utils.Peer;
 
 import javax.swing.plaf.synth.SynthDesktopIconUI;
@@ -36,7 +34,7 @@ public class FIFOBroadcast extends Process {
 		new FIFOReceiverThread(this).start();
 
 		while(!crashed) {
-			if (this.nrMessages >= seqNumber) {
+			if ((this.nrMessages >= seqNumber) && start_broadcast) {
 				Message msg = new Message(id, seqNumber, id);
 				broadcast(msg);
 				seqNumber++;

@@ -12,3 +12,7 @@ classes/
 
 # Binaries
 *.class
+*.out
+*.gz
+jdk1.8.0_191/
+logs/

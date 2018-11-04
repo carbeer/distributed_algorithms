@@ -13,7 +13,7 @@ MAIN:=Da_proc
 LIST:=
 
 classes: $(JAVA_CLASSES)
-		javac -d ${COMPILED_TARGET} $(LIST) ;
+		javac -Xlint:none -d ${COMPILED_TARGET} $(LIST) ;
 
 $(JAVA_CLASSES) : %.class : %.java
 	$(eval LIST+=$$<)

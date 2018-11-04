@@ -13,7 +13,7 @@ import sun.misc.SignalHandler;
 import utils.Message;
 import utils.Peer;
 
-
+@SuppressWarnings("restriction")
 public class Process {
 	static int id;
 	static String ip;
@@ -24,11 +24,12 @@ public class Process {
 	static volatile boolean crashed = false;
 	int seqNumber = 1;
 	ArrayList<Peer> peers;
-	private static volatile HashMap<Message, HashSet<Integer>>  msgAck = new HashMap<>();;
+	private static volatile HashMap<Message, HashSet<Integer>> msgAck = new HashMap<>();;
 	static private String logs = "";
 	static FileWriter writer;
 	public final static Logger LOGGER = Logger.getLogger(Process.class.getName());
 
+	@SuppressWarnings("restriction")
 	public Process(String[] args) throws Exception {
 		// Parse command line arguments
 		this.id = Integer.valueOf(args[0]);
@@ -36,9 +37,9 @@ public class Process {
 
 		// Check whether extra parameters were given as command line arguments
 		if (args.length > 2) {
-			extraParams = new String[args.length-2];
+			extraParams = new String[args.length - 2];
 			for (int i = 2; i < args.length; i++) {
-				extraParams[i-2] = args[i];
+				extraParams[i - 2] = args[i];
 			}
 		} else {
 			extraParams = null;
@@ -52,8 +53,8 @@ public class Process {
 			this.socket = new DatagramSocket(this.port);
 		} catch (java.net.SocketException e) {
 			// Doesn't make sense to be handled
-            throw e;
-        }
+			throw e;
+		}
 		try {
 			File directory = new File(System.getProperty("user.dir"));
 			writer = new FileWriter(directory + File.separator + "da_proc_" + this.id + ".out");
@@ -65,49 +66,48 @@ public class Process {
 		// Signal handlers
 		Signal.handle(new Signal("USR2"), new SignalHandler() {
 			public void handle(Signal sig) {
-				LOGGER.log(Level.INFO, "Received USR2 signal");
+				LOGGER.log(Level.INFO, "Process " + id + " Received USR2 signal. Starting the broadcast.");
 				start_broadcast = true;
 			}
 		});
 
 		Signal.handle(new Signal("INT"), new SignalHandler() {
 			public void handle(Signal sig) {
-				LOGGER.log(Level.INFO, "Received INT signal");
+				//LOGGER.log(Level.INFO, "Process " + id + " Received INT signal");
 				crash();
 			}
 		});
 
 		Signal.handle(new Signal("TERM"), new SignalHandler() {
 			public void handle(Signal sig) {
-				LOGGER.log(Level.INFO, "Received TERM signal");
+				//LOGGER.log(Level.INFO, "Process " + id + " Received TERM signal");
 				crash();
 			}
 		});
 	}
 
 	public static void crash() {
-		LOGGER.log(Level.SEVERE, "Process has been crashed, cleaning up.");
+		LOGGER.log(Level.SEVERE, "Process " + id + " has been crashed, cleaning up.");
 		crashed = true;
 		try {
-            writeLogsToFile();
-        } catch(Exception e) {
-		    LOGGER.log(Level.SEVERE, "Couldn't write the logs... We're screwed!");
-		    e.printStackTrace();
-        } finally {
-            socket.close();
-            LOGGER.log(Level.SEVERE, "Exiting now.");
-            System.exit(0);
-        }
+			writeLogsToFile();
+		} catch (Exception e) {
+			LOGGER.log(Level.SEVERE, "Process " + id + " Couldn't write the logs... We're screwed!");
+			e.printStackTrace();
+		} finally {
+			socket.close();
+			LOGGER.log(Level.SEVERE, "Process " + id + " Exiting now.");
+			System.exit(0);
+		}
 	}
-
 
 	public static void writeLogsToFile() {
 		try {
 			writer.write(logs);
 			logs = "";
-			LOGGER.log(Level.INFO, "Wrote logs.");
+			//LOGGER.log(Level.INFO, "Wrote logs.");
 			writer.close();
-		} catch(IOException e) {
+		} catch (IOException e) {
 			e.printStackTrace();
 		}
 
@@ -133,7 +133,7 @@ public class Process {
 	// Parses the peers from the membership file
 	public ArrayList<Peer> getPeers(File f, int procID) {
 		ArrayList<Peer> initPeers = new ArrayList<Peer>();
-		try{
+		try {
 			BufferedReader b = new BufferedReader(new FileReader(f));
 			String line;
 			String[] splitted;
@@ -148,40 +148,40 @@ public class Process {
 		}
 		return initPeers;
 	}
-	
-	//Parses the membership file
+
+	// Parses the membership file
 	public static String[] readMembership(File f, int procID) {
 		String[] splitted;
 		try {
-            BufferedReader b = new BufferedReader(new FileReader(f));
-            String readLine = "";
+			BufferedReader b = new BufferedReader(new FileReader(f));
+			String readLine = "";
 
-            while ((readLine = b.readLine()) != null) {
-            	String line = readLine;
-            	splitted = line.split("\\s+");
-            	if (Integer.valueOf(splitted[0]) == procID && splitted.length == 3) {
-            		return splitted;
-            	}
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+			while ((readLine = b.readLine()) != null) {
+				String line = readLine;
+				splitted = line.split("\\s+");
+				if (Integer.valueOf(splitted[0]) == procID && splitted.length == 3) {
+					return splitted;
+				}
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		return null;
 	}
 
 	public static boolean isCrashed() {
 		return crashed;
 	}
-	
-    public static synchronized void addAck(Message msg) {
-    	msgAck.get(msg).add(msg.getPeerID());
-    }
-    
-    public static synchronized void initAck(Message msg) {
-    	msgAck.put(msg, new HashSet<Integer>());
-    }
-    
-    public static HashSet<Integer> getAck(Message msg) {
-    	return msgAck.get(msg);
-    }
+
+	public static synchronized void addAck(Message msg) {
+		msgAck.get(msg).add(msg.getPeerID());
+	}
+
+	public static synchronized void initAck(Message msg) {
+		msgAck.put(msg, new HashSet<Integer>());
+	}
+
+	public static HashSet<Integer> getAck(Message msg) {
+		return msgAck.get(msg);
+	}
 }
