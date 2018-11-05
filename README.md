@@ -21,13 +21,14 @@ The programming language used is java.
 - /check_output.sh : helper used to check the correctness (according to FIFO logic) of the .out log files, generated after each run of the simulation by each process.
 - /check_correctness_java.sh : script simulating the execution of a scenario within a network. Running this scripts spawns processes and implement a scenario of unperfect execution (e.g crashes or stops random processes) to analyse the resilience of our network.
 - /Makefile : run 'make' to compile all java classes. Run 'make clean' to clean the generated files.
-- /membership : text file containing the topology of the network (process_ids, ip addresses and ports of each process simulating a distributed host).
+- /membership : text file containing the topology of the network (process_ids, ip addresses and ports of each process simulating a distributed host). One can modify this file to simulate a new topology.
 
 
 ## Running the code
 - Run the Makefile at the root of the project to compile the java classes
-- Then you can spawn a new process through the command 'java Da_proc {process_id} membership {nr_messages_to_broadcast}'
-The process spawn should be as described in the membership file placed at the root of the project.
+- Then you can spawn a new process through the command 'java Da_proc {process_id} membership {nr_messages_to_broadcast}':
+    - {nr_messages_to_broadcast} : amount of messages to broadcast during this run
+    - {process_id} : the processes spawned should have the {process_id} as described in the membership file found at the root of the project.
 - After the simulation, each process will generate a log of its activity at the root of the project as 'da_proc_{process_id}.out'.
 
 ## Repository Collaborators
