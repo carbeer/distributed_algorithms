@@ -14,7 +14,7 @@ public class PerfectSendThread extends Thread {
 	DatagramSocket socket;
 	ArrayList<Peer> peers;
 	Message message;
-	int sleepTime = 50;
+	int sleepTime = 10;
 	
 	public PerfectSendThread(Message msg, ArrayList<Peer> peers, DatagramSocket socket) {
 		this.message = msg.clone();

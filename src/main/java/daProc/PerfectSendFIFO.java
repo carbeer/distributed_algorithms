@@ -22,13 +22,11 @@ public class PerfectSendFIFO extends PerfectSendThread {
 		byte[] sendBuffer;
 
 		// Wait for the broadcast of the previous message to begin
-		while (!(FIFOBroadcast.getAck((new Message(message.getOrigin(), message.getSn() - 1, FIFOBroadcast.id))) == null || !(FIFOBroadcast.getAck(new Message(message.getOrigin(), message.getSn() - 1, FIFOBroadcast.id)).isEmpty()))
-				&& message.getSn() != 1) {
-			if ((FIFOBroadcast.getAck(new Message(message.getOrigin(),message.getSn() - 1, FIFOBroadcast.id)) == null)) {
-				System.out.print("Ack is null for " + message.getOrigin() + message.getSn() + message.getPeerID());
-			}
+		while (message.getSn() != 1
+		 		&& (FIFOBroadcast.getAck(new Message(message.getOrigin(), message.getSn() - 1, FIFOBroadcast.id)) == null
+				|| FIFOBroadcast.getAck(new Message(message.getOrigin(), message.getSn() - 1, FIFOBroadcast.id)).isEmpty())) {
 			try {
-				Thread.sleep(10);
+				Thread.sleep(5);
 				continue;
 			} catch (InterruptedException e) {
 				e.printStackTrace();
@@ -60,7 +58,7 @@ public class PerfectSendFIFO extends PerfectSendThread {
 			}
 
 			if (firstRun) {
-				if (message.getOrigin() == FIFOBroadcast.id && FIFOBroadcast.addPending(message)) {
+				if (FIFOBroadcast.id == message.getOrigin()) {
 					Process.writeLogLine("b " + message.getSn());
 				}
 				FIFOBroadcast.addAck(message);

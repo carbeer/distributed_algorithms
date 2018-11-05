@@ -42,8 +42,8 @@ public class Message implements Comparable<Message> {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Message message = (Message) o;
-        return originId == message.originId &&
-                sn == message.sn;
+        return (originId == message.originId &&
+                sn == message.sn);
     }
 
     /**

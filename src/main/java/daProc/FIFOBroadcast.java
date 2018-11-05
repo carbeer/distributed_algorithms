@@ -2,6 +2,7 @@ package daProc;
 
 import utils.Message;
 import java.util.*;
+import java.util.concurrent.PriorityBlockingQueue;
 import java.util.logging.Level;
 import utils.Peer;
 
@@ -33,6 +34,7 @@ public class FIFOBroadcast extends Process {
 				Message msg = new Message(id, seqNumber, id);
 				initAck(msg);
 				broadcast(msg);
+				addPending(msg);
 				seqNumber++;
 			}
 			// Check whether any message can be delivered
@@ -60,9 +62,12 @@ public class FIFOBroadcast extends Process {
     // Corresponds to majorityAck
     public synchronized void tryToDeliver(PriorityQueue<Message> pq) {
 		Message msg;
-		for (int i=0; i<pq.size();i++) {
-			// Just look at the first element
+		while (true) {
 			msg = pq.peek();
+			if (msg == null) {
+				return;
+			}
+			// Just look at the first element
 			if ((getAck(msg).size() > peers.size()/2) && (msg.getSn() == fifoNext.get(msg.getOrigin()))) {
 				// Deliver the message
 				fifoNext.put(msg.getOrigin(), fifoNext.get(msg.getOrigin())+1);
