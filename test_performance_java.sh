@@ -15,7 +15,7 @@ init_time=2
 # compile (should output: Da_proc.class)
 make
 
-echo "5
+echo "10
 1 127.0.0.1 11001
 2 127.0.0.1 11002
 3 127.0.0.1 11003

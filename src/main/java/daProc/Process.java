@@ -7,12 +7,16 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import sun.misc.Signal;
 import sun.misc.SignalHandler;
 import utils.Message;
 import utils.Peer;
 
+/**
+ * Class Process Describe the properties and method of a process simulating a
+ * host.
+ *
+ */
 public class Process {
 	static int id;
 	static String ip;
@@ -28,6 +32,12 @@ public class Process {
 	static FileWriter writer;
 	public final static Logger LOGGER = Logger.getLogger(Process.class.getName());
 
+	/**
+	 * Process constructor. Takes cmd arguments to initialize the process.
+	 * 
+	 * @param args : id of the process, membership and id of message to send
+	 * @throws Exception
+	 */
 	public Process(String[] args) throws Exception {
 		// Parse command line arguments
 		this.id = Integer.valueOf(args[0]);
@@ -42,21 +52,22 @@ public class Process {
 		} else {
 			extraParams = null;
 		}
+
+		// Reads the membership file and gather information about the processes
 		File membershipPath = new File(System.getProperty("user.dir") + File.separator + membership);
-		// String[] processParam = readMembership(membershipPath, id);
 		this.peers = readMembership(membershipPath, id);
-		// info about this process
 		this.ip = peers.get(0).address;
 		this.port = Integer.valueOf(peers.get(0).port);
 		peers.remove(0);
 
-
+		// Create socket to send messages to and from
 		try {
 			this.socket = new DatagramSocket(this.port);
 		} catch (java.net.SocketException e) {
-			// Doesn't make sense to be handled
 			throw e;
 		}
+
+		// Initialize the writer for the log file
 		try {
 			File directory = new File(System.getProperty("user.dir"));
 			writer = new FileWriter(directory + File.separator + "da_proc_" + this.id + ".out");
@@ -88,16 +99,22 @@ public class Process {
 		});
 	}
 
+	/**
+	 * Method called when a crash is triggered to clean up the buffer of the process
+	 * before exiting it.
+	 */
 	public static void crash() {
 		LOGGER.log(Level.SEVERE, "Process " + id + " has been crashed, cleaning up.");
 		crashed = true;
 		try {
 			writeLogsToFile();
-			// TODO: Only for benchmarking - Remove this lateron!
+			// TODO: Only for benchmarking - Remove this later on!
 			for (Peer p : Process.peers) {
-				LOGGER.log(Level.INFO, String.format("PROC %d: The latest delivered message by peer %s is %d", FIFOBroadcast.id, p.id, FIFOBroadcast.fifoNext.get(p.id)-1));
+				LOGGER.log(Level.INFO, String.format("PROC %d: The latest delivered message by peer %s is %d",
+						FIFOBroadcast.id, p.id, FIFOBroadcast.fifoNext.get(p.id) - 1));
 			}
-			LOGGER.log(Level.INFO, String.format("PROC %d: The latest delivered message by peer %s is %d", FIFOBroadcast.id, FIFOBroadcast.id, FIFOBroadcast.fifoNext.get(FIFOBroadcast.id)-1));
+			LOGGER.log(Level.INFO, String.format("PROC %d: The latest delivered message by peer %s is %d",
+					FIFOBroadcast.id, FIFOBroadcast.id, FIFOBroadcast.fifoNext.get(FIFOBroadcast.id) - 1));
 		} catch (Exception e) {
 			LOGGER.log(Level.SEVERE, "Process " + id + " Couldn't write the logs... We're screwed!");
 			e.printStackTrace();
@@ -108,18 +125,24 @@ public class Process {
 		}
 	}
 
+	/**
+	 * Method to flush the log variable out to a log file at the end of the
+	 * execution
+	 */
 	public static void writeLogsToFile() {
 		try {
 			writer.write(logs);
 			logs = "";
-			// LOGGER.log(Level.INFO, "Wrote logs.");
 			writer.close();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
 
-	// Allow only one Thread to write at a time
+	/**
+	 * Method to add a log event to the log variable
+	 * @param string : log event to write
+	 */
 	public static synchronized void writeLogLine(String s) {
 		if (!crashed) {
 			logs = logs + s + "\n";
@@ -135,8 +158,12 @@ public class Process {
 		return peers;
 	}
 
-	// TODO: Merge with readMembership
-	// Parses the peers from the membership file
+	/**
+	 * Method to parse the membership file to our data structure
+	 * @param file : membership file
+	 * @param procID : id of the process
+	 * @return ArrayList of all peers set up in the membership file (including self)
+	 */
 	public ArrayList<Peer> readMembership(File f, int procID) {
 		ArrayList<Peer> initPeers = new ArrayList<Peer>();
 		try {
@@ -160,18 +187,32 @@ public class Process {
 		return initPeers;
 	}
 
+	
 	public static boolean isCrashed() {
 		return crashed;
 	}
 
+	/**
+	 * Method used to update the acknowledgment variable of the current process by adding the msg in argument to it
+	 * @param msg to acknlowledge
+	 */
 	public static synchronized void addAck(Message msg) {
 		msgAck.get(msg).add(msg.getPeerID());
 	}
 
+	/**
+	 * Method used to initialize the acknowledgment HashSet of a new message
+	 * @param msg for which to initialize the ack
+	 */
 	public static synchronized void initAck(Message msg) {
 		msgAck.put(msg, new HashSet<Integer>());
 	}
 
+	/**
+	 * 
+	 * @param msg
+	 * @return HashSet containing all acknowledgement for the given message
+	 */
 	public static HashSet<Integer> getAck(Message msg) {
 		return msgAck.get(msg);
 	}
