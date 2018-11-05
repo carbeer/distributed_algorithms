@@ -11,6 +11,8 @@ Project realised during the Autommn semester of 2018-2019, for the class of Dist
     
 The goal is to implement a distributed payment system through reliable FIFO transmission channels over UDP. This will lay ground for the implementation of a blockchain on top of these reliable channels.
 
+The way that we implement it is by spawning a process for each node of our simulated distributed network. This host will communicate its messages with the rest of the network using a 'Best Effort Broadcast' logic, and deliver the messages of the rest of the network using a 'FIFO delivery logic'.
+
 The programming language used is java.
 
 ## Folders and structure 
