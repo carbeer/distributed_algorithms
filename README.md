@@ -2,6 +2,7 @@
 
 ## TODO
 - clean_up files and prepare submission
+- clean up the prints of the program
 - update Makefile with new structure of files
 
 ## Description
