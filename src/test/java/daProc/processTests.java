@@ -13,7 +13,7 @@ public class processTests {
         File membershipPath = new File(System.getProperty("user.dir") + "/src/test/java/daProc/membership.txt");
         ArrayList<Process.Peer> expected = new ArrayList<Process.Peer>();
         expected.add(new Process.Peer("127.100.0.1", 11001));
-        ArrayList<Process.Peer> result = Process.getPeers(membershipPath, 2);
+        ArrayList<Process.Peer> result = Process.readMembership(membershipPath, 2);
 
         Assert.assertEquals(result.size(), expected.size());
         for (int i = 0; i < result.size(); i++) {

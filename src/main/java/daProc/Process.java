@@ -13,7 +13,6 @@ import sun.misc.SignalHandler;
 import utils.Message;
 import utils.Peer;
 
-@SuppressWarnings("restriction")
 public class Process {
 	static int id;
 	static String ip;
@@ -29,7 +28,6 @@ public class Process {
 	static FileWriter writer;
 	public final static Logger LOGGER = Logger.getLogger(Process.class.getName());
 
-	@SuppressWarnings("restriction")
 	public Process(String[] args) throws Exception {
 		// Parse command line arguments
 		this.id = Integer.valueOf(args[0]);
@@ -45,10 +43,13 @@ public class Process {
 			extraParams = null;
 		}
 		File membershipPath = new File(System.getProperty("user.dir") + File.separator + membership);
-		String[] processParam = readMembership(membershipPath, id);
-		this.ip = processParam[1];
-		this.port = Integer.valueOf(processParam[2]);
-		this.peers = getPeers(membershipPath, id);
+		// String[] processParam = readMembership(membershipPath, id);
+		this.peers = readMembership(membershipPath, id);
+		// info about this process
+		this.ip = peers.get(0).address;
+		this.port = Integer.valueOf(peers.get(0).port);
+		peers.remove(0);
+
 		try {
 			this.socket = new DatagramSocket(this.port);
 		} catch (java.net.SocketException e) {
@@ -73,14 +74,14 @@ public class Process {
 
 		Signal.handle(new Signal("INT"), new SignalHandler() {
 			public void handle(Signal sig) {
-				//LOGGER.log(Level.INFO, "Process " + id + " Received INT signal");
+				// LOGGER.log(Level.INFO, "Process " + id + " Received INT signal");
 				crash();
 			}
 		});
 
 		Signal.handle(new Signal("TERM"), new SignalHandler() {
 			public void handle(Signal sig) {
-				//LOGGER.log(Level.INFO, "Process " + id + " Received TERM signal");
+				// LOGGER.log(Level.INFO, "Process " + id + " Received TERM signal");
 				crash();
 			}
 		});
@@ -105,7 +106,7 @@ public class Process {
 		try {
 			writer.write(logs);
 			logs = "";
-			//LOGGER.log(Level.INFO, "Wrote logs.");
+			// LOGGER.log(Level.INFO, "Wrote logs.");
 			writer.close();
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -131,42 +132,27 @@ public class Process {
 
 	// TODO: Merge with readMembership
 	// Parses the peers from the membership file
-	public ArrayList<Peer> getPeers(File f, int procID) {
+	public ArrayList<Peer> readMembership(File f, int procID) {
 		ArrayList<Peer> initPeers = new ArrayList<Peer>();
 		try {
 			BufferedReader b = new BufferedReader(new FileReader(f));
 			String line;
 			String[] splitted;
+			Peer temp = null;
 			while ((line = b.readLine()) != null) {
 				splitted = line.split("\\s+");
 				if (Integer.valueOf(splitted[0]) != procID && splitted.length == 3) {
 					initPeers.add(new Peer(splitted[1], Integer.valueOf(splitted[2]), Integer.valueOf(splitted[0])));
 				}
+				if (Integer.valueOf(splitted[0]) == procID && splitted.length == 3) {
+					temp = new Peer(splitted[1], Integer.valueOf(splitted[2]), Integer.valueOf(splitted[0]));
+				}
 			}
+			initPeers.add(0, temp);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 		return initPeers;
-	}
-
-	// Parses the membership file
-	public static String[] readMembership(File f, int procID) {
-		String[] splitted;
-		try {
-			BufferedReader b = new BufferedReader(new FileReader(f));
-			String readLine = "";
-
-			while ((readLine = b.readLine()) != null) {
-				String line = readLine;
-				splitted = line.split("\\s+");
-				if (Integer.valueOf(splitted[0]) == procID && splitted.length == 3) {
-					return splitted;
-				}
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		return null;
 	}
 
 	public static boolean isCrashed() {
