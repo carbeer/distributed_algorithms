@@ -35,14 +35,6 @@ done
 #leave some time for process initialization
 sleep $init_time
 
-#start broadcasting
-for i in `seq 1 5`
-do
-    if [ -n "${da_proc_id[$i]}" ]; then
-	kill -USR2 "${da_proc_id[$i]}"
-    fi
-done
-
 #do some nasty stuff like process crashes and delays
 #example:
 kill -STOP "${da_proc_id[3]}" #pause process 3
@@ -50,6 +42,14 @@ sleep 1
 kill -TERM "${da_proc_id[2]}" #crash process 2
 da_proc_id[2]=""
 kill -CONT "${da_proc_id[3]}" #resume process 3
+
+#start broadcasting
+for i in `seq 1 5`
+do
+    if [ -n "${da_proc_id[$i]}" ]; then
+	kill -USR2 "${da_proc_id[$i]}"
+    fi
+done
 
 #do some more nasty stuff
 #example:
@@ -79,6 +79,6 @@ do
 done
 
 #check logs for correctness
-check_output.sh 1 3 5
+./check_output.sh 1 3 5
 
 echo "Correctness test done."
