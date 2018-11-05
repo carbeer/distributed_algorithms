@@ -17,18 +17,16 @@ public class FIFOReceiverThread extends Thread {
 		this.process = process;
 	}
 
-
 	public void run() {
 		DatagramSocket socket = process.getSocket();
 		byte[] receiveBuffer;
-
 		
 		while (!process.crashed) {
             receiveBuffer = new byte[256];
             DatagramPacket packet = new DatagramPacket(receiveBuffer, receiveBuffer.length);
             try {
                	socket.receive(packet);
-               	// Check whether the process is still alive.
+               	// Check whether the process is still alive and is allowed to receive the new packet.
                	if (process.crashed) {
                		break;
 				}

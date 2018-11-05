@@ -2,9 +2,9 @@ package daProc;
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.security.cert.CRLReason;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.Arrays;
+import java.util.PriorityQueue;
 import java.util.logging.Level;
 
 import utils.Message;
@@ -22,10 +22,13 @@ public class PerfectSendFIFO extends PerfectSendThread {
 		byte[] sendBuffer;
 
 		// Wait for the broadcast of the previous message to begin
-		while (FIFOBroadcast.getAck(new Message(message.getOrigin(), message.getSn() - 1, FIFOBroadcast.id)) == null
+		while (!(FIFOBroadcast.getAck((new Message(message.getOrigin(), message.getSn() - 1, FIFOBroadcast.id))) == null || !(FIFOBroadcast.getAck(new Message(message.getOrigin(), message.getSn() - 1, FIFOBroadcast.id)).isEmpty()))
 				&& message.getSn() != 1) {
+			if ((FIFOBroadcast.getAck(new Message(message.getOrigin(),message.getSn() - 1, FIFOBroadcast.id)) == null)) {
+				System.out.print("Ack is null for " + message.getOrigin() + message.getSn() + message.getPeerID());
+			}
 			try {
-				Thread.sleep(50);
+				Thread.sleep(10);
 				continue;
 			} catch (InterruptedException e) {
 				e.printStackTrace();
@@ -54,23 +57,19 @@ public class PerfectSendFIFO extends PerfectSendThread {
 					Process.LOGGER.log(Level.WARNING, "Error while sending DatagramPacket");
 					e.printStackTrace();
 				}
-
 			}
-			// TODO: Without the check for FIFOBroadcast.getAck(message) == null the
-			// broadcast order gets messed up from time to time. Why? Error somewhere else?
-			if (firstRun && FIFOBroadcast.getAck(message) == null) {
-				if (message.getOrigin() == FIFOBroadcast.id) {
+
+			if (firstRun) {
+				if (message.getOrigin() == FIFOBroadcast.id && FIFOBroadcast.addPending(message)) {
 					Process.writeLogLine("b " + message.getSn());
 				}
-				FIFOBroadcast.addPending(message);
-				FIFOBroadcast.initAck(message);
 				FIFOBroadcast.addAck(message);
 				firstRun = false;
 			}
 			// slow down the infinite thread
 			try {
-				Thread.sleep(sleep_time);
-				sleep_time = 2 * sleep_time;
+				Thread.sleep(sleepTime);
+				sleepTime = 2 * sleepTime;
 			} catch (InterruptedException e1) {
 				e1.printStackTrace();
 			}

@@ -18,7 +18,7 @@ public class Process {
 	static int id;
 	static String ip;
 	final int port;
-	static boolean start_broadcast;
+	static boolean startBroadcast;
 	final String[] extraParams;
 	static DatagramSocket socket;
 	static volatile boolean crashed = false;
@@ -67,7 +67,7 @@ public class Process {
 		Signal.handle(new Signal("USR2"), new SignalHandler() {
 			public void handle(Signal sig) {
 				LOGGER.log(Level.INFO, "Process " + id + " Received USR2 signal. Starting the broadcast.");
-				start_broadcast = true;
+				startBroadcast = true;
 			}
 		});
 

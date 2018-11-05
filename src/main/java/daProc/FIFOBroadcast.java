@@ -1,24 +1,20 @@
 package daProc;
 
 import utils.Message;
-
 import java.util.*;
 import java.util.logging.Level;
 import utils.Peer;
 
-import javax.swing.plaf.synth.SynthDesktopIconUI;
-
 public class FIFOBroadcast extends Process {
 	// Array of sorted queues of pending messages
 	private static HashMap<Integer, PriorityQueue<Message>> pending = new HashMap<>();
-	static HashSet<Message> delivered = new HashSet<>();
 	static HashMap<Integer, Integer> fifoNext = new HashMap<>();
 	// Amount of messages that shall be sent by this process
 	final int nrMessages;
 	
 	public FIFOBroadcast(String[] args) throws Exception {
 		super(args);
-		LOGGER.log(Level.FINE, "Creating instance of FIFOBroadcast now");
+		LOGGER.log(Level.INFO, "Starting the FIFOBroadcast protocol");
 		validateParams();
 		this.nrMessages = Integer.parseInt(extraParams[0]);
 
@@ -29,17 +25,16 @@ public class FIFOBroadcast extends Process {
 		}
 		pending.put(id, new PriorityQueue<Message>());
 		fifoNext.put(id, 1);
-		
 
 		new FIFOReceiverThread(this).start();
 
 		while(!crashed) {
-			if ((this.nrMessages >= seqNumber) && start_broadcast) {
+			if ((this.nrMessages >= seqNumber) && startBroadcast) {
 				Message msg = new Message(id, seqNumber, id);
+				initAck(msg);
 				broadcast(msg);
 				seqNumber++;
 			}
-
 			// Check whether any message can be delivered
 			for (Peer peer : peers) {
 				tryToDeliver(getPending(peer.id));
@@ -51,13 +46,10 @@ public class FIFOBroadcast extends Process {
 	private void validateParams() throws Exception {
 		if (extraParams == null) {
 			throw new Exception("Please provide the number of messages as argument for FIFOBroadcast");
-		} 
-		//Guillaume : we don t need the elif as we will just disregard addtional parameters right?
-		//and we need to be able to input other arguments for assignment 2 anyways
+		}
 		else if (extraParams.length != 1) {
 			throw new Exception("You passed invalid arguments: " + Arrays.toString(extraParams));
 		}
-		
 	}
 
 	public void broadcast(Message msg) {
@@ -67,49 +59,56 @@ public class FIFOBroadcast extends Process {
 
     // Corresponds to majorityAck
     public synchronized void tryToDeliver(PriorityQueue<Message> pq) {
-		Message msg = pq.poll();
+		Message msg;
 		for (int i=0; i<pq.size();i++) {
+			// Just look at the first element
+			msg = pq.peek();
 			if ((getAck(msg).size() > peers.size()/2) && (msg.getSn() == fifoNext.get(msg.getOrigin()))) {
 				// Deliver the message
 				fifoNext.put(msg.getOrigin(), fifoNext.get(msg.getOrigin())+1);
 				writeLogLine("d " + msg.getOrigin() + " " + msg.getSn());
-				delivered.add(msg);
-				msg = pq.poll();
+				// Remove the first element now (as it has been used)
+				pq.poll();
 				continue;
 			}
-			break;
+			return;
 		}
     }
 
     // TODO: Think about how we could parallelize the processing of incoming messages --> Distinguish by read/ write access for Threads?
 	public synchronized void receiveHandler(Message message) {
 		// Verify whether the message is new for the current process
-		if(!getPending(message.getOrigin()).contains(message) && !delivered.contains(message)) {
-			// Add message to the list of pending messages
-			addPending(message);
-			initAck(message);
-			// Add self to list of acked processes
-			addAck(message);
-			// Start broadcasting the message to others
-			broadcast(message);
+		if(!isDelivered(message)) {
+			// Insert message to the list of pending messages
+			if (addPending(message)) {
+				// Initialize acks if this is a new message
+				initAck(message);
+				// Ack happens as part of the broadcasting process
+				broadcast(message);
+				return;
+			}
 		}
-
-		// TODO: Since the data type is a set, it might be more efficient to just add it (without the prior if clause) --> Test later on or Google now
-		// The sendingProcess must know the message --> add to ack if not there yet
-		if (!getAck(message).contains(message.getPeerID())) {
-			addAck(message);
-		}
+		// The sendingProcess must know the message --> add to ack if not there yet (check is done implicitly through the Set)
+		addAck(message);
 	}
-	
-    public static synchronized void addPending(Message msg) {
-    	pending.get(msg.getOrigin()).add(msg);
+
+    public static synchronized boolean addPending(Message msg) {
+		if (pending.get(msg.getOrigin()).contains(msg)) {
+			return false;
+		}
+		return pending.get(msg.getOrigin()).add(msg);
     }
-    
     
     public static PriorityQueue<Message> getPending(int origin) {
     	return pending.get(origin);
     }
 
+    public static boolean isDelivered(Message msg) {
+		if (fifoNext.get(msg.getOrigin()) > msg.getSn()) {
+			return true;
+		}
+		return false;
+	}
 
     public static void main(String []args) {
 		LOGGER.log(Level.FINE, "Entering the main method of the FIFOBroadcast");
@@ -120,7 +119,5 @@ public class FIFOBroadcast extends Process {
 			System.exit(0);
 		}
     }
-    
-
 }
 
