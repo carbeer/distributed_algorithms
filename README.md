@@ -32,4 +32,4 @@ The process spawn should be as described in the membership file placed at the ro
 
   - Caviggia Guillaume
   - Beer Carolin
-  - Francesco Pase
+  - Pase Francesco
