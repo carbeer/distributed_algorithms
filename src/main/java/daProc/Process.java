@@ -22,7 +22,7 @@ public class Process {
 	static DatagramSocket socket;
 	static volatile boolean crashed = false;
 	int seqNumber = 1;
-	ArrayList<Peer> peers;
+	static ArrayList<Peer> peers;
 	private static volatile HashMap<Message, HashSet<Integer>> msgAck = new HashMap<>();;
 	static private String logs = "";
 	static FileWriter writer;
@@ -50,6 +50,7 @@ public class Process {
 		this.port = Integer.valueOf(peers.get(0).port);
 		peers.remove(0);
 
+
 		try {
 			this.socket = new DatagramSocket(this.port);
 		} catch (java.net.SocketException e) {
@@ -60,7 +61,7 @@ public class Process {
 			File directory = new File(System.getProperty("user.dir"));
 			writer = new FileWriter(directory + File.separator + "da_proc_" + this.id + ".out");
 		} catch (java.io.IOException e) {
-			System.out.println("Error while creating the file writer");
+			LOGGER.log(Level.SEVERE, "Error while creating the file writer");
 			e.printStackTrace();
 		}
 
@@ -92,6 +93,11 @@ public class Process {
 		crashed = true;
 		try {
 			writeLogsToFile();
+			// TODO: Only for benchmarking - Remove this lateron!
+			for (Peer p : Process.peers) {
+				LOGGER.log(Level.INFO, String.format("PROC %d: The latest delivered message by peer %s is %d", FIFOBroadcast.id, p.id, FIFOBroadcast.fifoNext.get(p.id)-1));
+			}
+			LOGGER.log(Level.INFO, String.format("PROC %d: The latest delivered message by peer %s is %d", FIFOBroadcast.id, FIFOBroadcast.id, FIFOBroadcast.fifoNext.get(FIFOBroadcast.id)-1));
 		} catch (Exception e) {
 			LOGGER.log(Level.SEVERE, "Process " + id + " Couldn't write the logs... We're screwed!");
 			e.printStackTrace();
@@ -111,14 +117,13 @@ public class Process {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-
 	}
 
 	// Allow only one Thread to write at a time
 	public static synchronized void writeLogLine(String s) {
 		if (!crashed) {
 			logs = logs + s + "\n";
-			System.out.println(s);
+			LOGGER.log(Level.FINE, s + "\n");
 		}
 	}
 

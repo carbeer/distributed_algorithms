@@ -32,6 +32,10 @@ public class FIFOReceiverThread extends Thread {
 				}
 				Message message = new Message(packet);
 				process.receiveHandler(message);
+			} catch (java.net.SocketException e) {
+            	Process.LOGGER.log(Level.WARNING, "Error while receiving DatagramPacket");
+            	e.printStackTrace();
+
             } catch (java.io.IOException e) {
 				Process.LOGGER.log(Level.WARNING, "Error while receiving DatagramPacket");
                 e.printStackTrace();
