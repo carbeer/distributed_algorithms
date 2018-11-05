@@ -19,7 +19,7 @@ The programming language used is java.
 
 - /check_fifo.py : helper used to check that the processes indeed work with a FIFO broadcast logic
 - /check_output.sh : helper used to check the correctness (according to FIFO logic) of the .out log files, generated after each run of the simulation by each process.
-- /check_correctness_java.sh : script simulating the execution of a scenario within a network. Running this scripts spawns processes and implement a scenario of unperfect execution, crashes random processes to analyse the resilience of our network.
+- /check_correctness_java.sh : script simulating the execution of a scenario within a network. Running this scripts spawns processes and implement a scenario of unperfect execution (e.g crashes or stops random processes) to analyse the resilience of our network.
 - /Makefile : run 'make' to compile all java classes. Run 'make clean' to clean the generated files.
 - /membership : text file containing the topology of the network (process_ids, ip addresses and ports of each process simulating a distributed host).
 
