@@ -7,9 +7,9 @@
 - benchmark our implementation
 
 ## Description
-Project realised during Autumn Semester 2018-2019, for the class of Distributed Algorithms (taught by M.Gerraoui) during our Master at EPFL.
+Project realised during the Autommn semester of 2018-2019, for the class of Distributed Algorithms (taught by M.Gerraoui) during our Master at EPFL.
     
-The goal is to implement a distributed payment system through reliable FIFO transmission channels over UDP. This will lay ground for the implementation of a blockchain on top of this reliable channels.
+The goal is to implement a distributed payment system through reliable FIFO transmission channels over UDP. This will lay ground for the implementation of a blockchain on top of these reliable channels.
 
 The programming language used is java.
 
