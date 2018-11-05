@@ -13,6 +13,8 @@ classes/
 # Binaries
 *.class
 
+# Clean
 *.out
+membership
 jdk1.8.0_191/
 logs/
