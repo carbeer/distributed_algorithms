@@ -57,6 +57,8 @@ public class PerfectSend extends Thread {
 				try {
 					if (!(FIFOBroadcast.crashed)) {
 						socket.send(packet);
+						// Acknowledge the messages we send if this is the first attempt at sending it
+						logBroadcast();
 					}
 				} catch (java.net.SocketException e) {
 					Process.LOGGER.log(Level.WARNING,
@@ -66,9 +68,6 @@ public class PerfectSend extends Thread {
 					e.printStackTrace();
 				}
 			}
-
-			// Acknowledge the messages we send if this is the first attempt at sending it
-			logBroadcast();
 
 			// Slow down the infinite thread
 			try {
