@@ -1,6 +1,4 @@
-JAVA_FILES:=$(wildcard src/main/java/daProc/*.java)
-JAVA_FILES+=${wildcard src/main/java/utils/*.java}
-JAVA_FILES+=${wildcard src/main/java/*.java}
+JAVA_FILES:=$(wildcard *.java)
 JVM=java
 #
 # the rest is independent of the directory
