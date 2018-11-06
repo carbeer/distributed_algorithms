@@ -23,3 +23,4 @@ clean:
 	$(RM) ${COMPILED_TARGET}/*.class
 	rm -rf daProc
 	rm -rf utils
+	rm -rf *.out
