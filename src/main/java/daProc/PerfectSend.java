@@ -3,6 +3,7 @@ package daProc;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.logging.Level;
 
 import utils.Message;
@@ -50,39 +51,51 @@ public class PerfectSend extends Thread {
 		// While the thread runs, send the message corresponding to the current seq_num
 		// of the parent process
 		while (true) {
-
-			// Send a packet containing the data of the message to send to all peers
-			for (Peer peer : this.peers) {
-				DatagramPacket packet = new DatagramPacket(sendBuffer, sendBuffer.length, peer.inetAddress, peer.port);
-				try {
-					if (!(FIFOBroadcast.crashed)) {
-						socket.send(packet);
+			if (FIFOBroadcast.startBroadcast) {
+				// Send a packet containing the data of the message to send to all peers
+				for (Peer peer : this.peers) {
+					DatagramPacket packet = new DatagramPacket(sendBuffer, sendBuffer.length, peer.inetAddress, peer.port);
+					try {
+						if (!(FIFOBroadcast.crashed)) {
+							socket.send(packet);
+						} else {
+							return;
+						}
+					} catch (java.net.SocketException e) {
+						Process.LOGGER.log(Level.WARNING,
+								"Cannot send the message, the socket is closed for process " + FIFOBroadcast.id);
+					} catch (java.io.IOException e) {
+						Process.LOGGER.log(Level.WARNING, "Error while sending DatagramPacket");
+						e.printStackTrace();
 					}
-				} catch (java.net.SocketException e) {
-					Process.LOGGER.log(Level.WARNING,
-							"Cannot send the message, the socket is closed for process " + FIFOBroadcast.id);
-				} catch (java.io.IOException e) {
-					Process.LOGGER.log(Level.WARNING, "Error while sending DatagramPacket");
-					e.printStackTrace();
 				}
-			}
 
-			// Acknowledge the messages we send if this is the first attempt at sending it
-			logBroadcast();
+				// Acknowledge the messages we send if this is the first attempt at sending it
+				logBroadcast();
 
-			// Slow down the infinite thread
-			try {
-				Thread.sleep(sleepTime);
-				sleepTime = 2 * sleepTime;
-			} catch (InterruptedException e1) {
-				e1.printStackTrace();
+				// Slow down the infinite thread
+				try {
+					Thread.sleep(sleepTime);
+					sleepTime = 2 * sleepTime;
+				} catch (InterruptedException e1) {
+					e1.printStackTrace();
+				}
+			} else {
+				// Slow down the infinite thread
+				try {
+					Thread.sleep(2);
+				} catch (InterruptedException e1) {
+					e1.printStackTrace();
+				}
 			}
 		}
 	}
 
 	void logBroadcast() {
 		if (this.firstRun) {
-			if (FIFOBroadcast.id == message.getOrigin()) {
+			if (message.getOrigin() == FIFOBroadcast.id) {
+				if (Arrays.toString(FIFOBroadcast.getAck(message).toArray()).isEmpty())
+					System.out.print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!IT HAPPEND!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
 				Process.writeLogLine("b " + message.getSn());
 			}
 			FIFOBroadcast.addAck(message);

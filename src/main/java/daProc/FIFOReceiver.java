@@ -14,31 +14,24 @@ import java.util.logging.Logger;
  */
 public class FIFOReceiver extends Thread {
 
-	public FIFOBroadcast process;
-
-	public FIFOReceiver(FIFOBroadcast process) {
-		this.process = process;
-	}
-
 	public void run() {
-		
 		// Initialize the receiving socket
-		DatagramSocket socket = process.getSocket();
+		DatagramSocket socket = FIFOBroadcast.getSocket();
 		byte[] receiveBuffer;
 
 		// Processes datagrams at the buffer as long as the process is live
-		while (!process.crashed) {
+		while (!FIFOBroadcast.crashed) {
 			receiveBuffer = new byte[256];
 			DatagramPacket packet = new DatagramPacket(receiveBuffer, receiveBuffer.length);
 			try {
 				socket.receive(packet);
 				// Check whether the process is still alive and is allowed to receive the new
 				// packet.
-				if (process.crashed) {
+				if (FIFOBroadcast.crashed) {
 					break;
 				}
 				Message message = new Message(packet);
-				process.receiveHandler(message);
+				FIFOBroadcast.receiveHandler(message);
 			} catch (java.net.SocketException e) {
 				Process.LOGGER.log(Level.WARNING, "Error while receiving DatagramPacket");
 				e.printStackTrace();

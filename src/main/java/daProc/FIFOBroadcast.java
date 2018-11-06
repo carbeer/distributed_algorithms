@@ -14,7 +14,7 @@ public class FIFOBroadcast extends Process {
 	private static HashMap<Integer, PriorityQueue<Message>> pending = new HashMap<>();
 	static HashMap<Integer, Integer> fifoNext = new HashMap<>();
 	// Amount of messages that shall be sent by this process
-	final int nrMessages;
+	static int nrMessages;
 
 	/**
 	 * FIFOBroadcast Process constructor. Takes cmd arguments to initialize the
@@ -27,11 +27,11 @@ public class FIFOBroadcast extends Process {
 		super(args);
 		LOGGER.log(Level.INFO, "Starting the FIFOBroadcast protocol");
 
-		// Check that parameter inherited from parent class are correctly formatted
+		// Check that command line arguments provided by the user are correctly formatted
 		validateParams();
-		this.nrMessages = Integer.parseInt(extraParams[0]);
+		nrMessages = Integer.parseInt(extraParams[0]);
 
-		// PriorityQueue of ordered messages can be accessed by the id of the origin
+		// Initialize variables
 		for (Peer peer : peers) {
 			pending.put(peer.id, new PriorityQueue<Message>());
 			fifoNext.put(peer.id, 1);
@@ -40,25 +40,22 @@ public class FIFOBroadcast extends Process {
 		fifoNext.put(id, 1);
 
 		// Start to listen on the initialized socket.
-		new FIFOReceiver(this).start();
+		new FIFOReceiver().start();
+		new FIFOSend().start();
 
 		while (!crashed) {
-			// If the broadcast has been triggered, and that we can still send messages,
-			// send all messages possible.
-			if ((this.nrMessages >= seqNumber) && startBroadcast) {
-				Message msg = new Message(id, seqNumber, id);
-				initAck(msg);
-				broadcast(msg);
-				addPending(msg);
-				seqNumber++;
-			}
-
 			// Check whether any message can be delivered according to the FIFO logic, and
 			// deliver the messages that can be.
 			for (Peer peer : peers) {
 				tryToDeliver(getPending(peer.id));
 			}
 			tryToDeliver(getPending(id));
+
+			try {
+				Thread.sleep(10);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 
@@ -67,7 +64,7 @@ public class FIFOBroadcast extends Process {
 	 * 
 	 * @throws Exception
 	 */
-	private void validateParams() throws Exception {
+	private static void validateParams() throws Exception {
 		if (extraParams == null) {
 			throw new Exception("Please provide the number of messages as argument for FIFOBroadcast");
 		} else if (extraParams.length != 1) {
@@ -78,11 +75,11 @@ public class FIFOBroadcast extends Process {
 	/**
 	 * Called when process needs to send a messages to the network. Spawns a thread
 	 * implementing perfect link logic for all messages to broadcast.
-	 * 
+	 *
 	 * @param msg to broadcast
 	 */
-	public void broadcast(Message msg) {
-		PerfectSendFIFO thread = new PerfectSendFIFO(msg, getPeers(), getSocket());
+	public static void broadcast(Message msg) {
+		PerfectSend thread = new PerfectSend(msg, getPeers(), getSocket());
 		thread.start();
 	}
 
@@ -97,10 +94,10 @@ public class FIFOBroadcast extends Process {
 		Message msg;
 		while (true) {
 			msg = pq.peek();
-			if (msg == null) {
+
+			if (msg == null || getAck(msg) == null) {
 				return;
 			}
-
 			// Just look at the first element and check if it can be delivered
 			if ((getAck(msg).size() > peers.size() / 2) && (msg.getSn() == fifoNext.get(msg.getOrigin()))) {
 
@@ -121,11 +118,14 @@ public class FIFOBroadcast extends Process {
 	 * the pending, and acknowledgements variable. It also starts the broadcast of
 	 * this message by the process so to ack it for other processes.
 	 */
-	public synchronized void receiveHandler(Message message) {
+	public static synchronized void receiveHandler(Message message) {
+		if (message == null) {
+			return;
+		}
 		if (!isDelivered(message)) {
 
 			// Insert message to the list of pending messages
-			if (addPending(message)) {
+			if (message.getOrigin() != FIFOBroadcast.id && addPending(message)) {
 
 				// Initialize acks if this is a new message
 				initAck(message);
@@ -183,7 +183,7 @@ public class FIFOBroadcast extends Process {
 	 * @param args : cmd arguments
 	 */
 	public static void main(String[] args) {
-		LOGGER.setLevel(Level.SEVERE);
+		LOGGER.setLevel(Level.OFF);
 		LOGGER.log(Level.FINE, "Entering the main method of the FIFOBroadcast");
 		try {
 			new FIFOBroadcast(args);

@@ -22,10 +22,10 @@ public class Process {
 	static String ip;
 	final int port;
 	static boolean startBroadcast;
-	final String[] extraParams;
+	static String[] extraParams;
 	static DatagramSocket socket;
 	static volatile boolean crashed = false;
-	int seqNumber = 1;
+	static int seqNumber = 1;
 	static ArrayList<Peer> peers;
 	private static volatile HashMap<Message, HashSet<Integer>> msgAck = new HashMap<>();;
 	static private String logs = "";
@@ -86,14 +86,12 @@ public class Process {
 
 		Signal.handle(new Signal("INT"), new SignalHandler() {
 			public void handle(Signal sig) {
-				// LOGGER.log(Level.INFO, "Process " + id + " Received INT signal");
 				crash();
 			}
 		});
 
 		Signal.handle(new Signal("TERM"), new SignalHandler() {
 			public void handle(Signal sig) {
-				// LOGGER.log(Level.INFO, "Process " + id + " Received TERM signal");
 				crash();
 			}
 		});
@@ -114,7 +112,7 @@ public class Process {
 				msgDelivered += FIFOBroadcast.fifoNext.get(p.id) - 1;
             }
             msgDelivered += FIFOBroadcast.fifoNext.get(id) - 1;
-			LOGGER.log(Level.INFO, String.format("PROC %d: Delivered a total of %d messages", id, msgDelivered));
+			System.out.print(String.format("PROC %d: Delivered a total of %d messages\n", id, msgDelivered));
 		} catch (Exception e) {
 			LOGGER.log(Level.SEVERE, "Process " + id + " Couldn't write the logs... We're screwed!");
 			e.printStackTrace();
@@ -129,7 +127,7 @@ public class Process {
 	 * Method to flush the log variable out to a log file at the end of the
 	 * execution
 	 */
-	public static void writeLogsToFile() {
+	public static synchronized void writeLogsToFile() {
 		try {
 			writer.write(logs);
 			logs = "";
@@ -208,7 +206,7 @@ public class Process {
      * Getter for the Socket of the Process
      * @return socket
      */
-    public DatagramSocket getSocket() {
+    public static DatagramSocket getSocket() {
         return socket;
     }
 
@@ -216,7 +214,7 @@ public class Process {
      * Getter for the Peers of the process
      * @return peers
      */
-    public ArrayList<Peer> getPeers() {
+    public static ArrayList<Peer> getPeers() {
         return peers;
     }
 }
