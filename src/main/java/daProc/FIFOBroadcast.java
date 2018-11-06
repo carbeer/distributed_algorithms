@@ -2,13 +2,11 @@ package daProc;
 
 import utils.Message;
 import java.util.*;
-import java.util.concurrent.PriorityBlockingQueue;
 import java.util.logging.Level;
 import utils.Peer;
 
 /**
- * SuperClass FIFOBroadcast describes the properties and methods of a process
- * simulating a host implementing FIFO broadcast logic.
+ * FIFOBroadcast implements the properties and methods of a node with FIFO broadcast logic.
  *
  */
 public class FIFOBroadcast extends Process {
@@ -42,7 +40,7 @@ public class FIFOBroadcast extends Process {
 		fifoNext.put(id, 1);
 
 		// Start to listen on the initialized socket.
-		new FIFOReceiverThread(this).start();
+		new FIFOReceiver(this).start();
 
 		while (!crashed) {
 			// If the broadcast has been triggered, and that we can still send messages,
@@ -185,6 +183,7 @@ public class FIFOBroadcast extends Process {
 	 * @param args : cmd arguments
 	 */
 	public static void main(String[] args) {
+		LOGGER.setLevel(Level.SEVERE);
 		LOGGER.log(Level.FINE, "Entering the main method of the FIFOBroadcast");
 		try {
 			new FIFOBroadcast(args);

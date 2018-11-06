@@ -8,17 +8,15 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Class FIFOReceiverThread handles the reception of datagrams through the
+ * Class FIFOReceiver handles the reception of datagrams through the
  * socket of the process. It updates the relevant variable for the FIFO delivery
- * logic. It ensure that no messages are processed as soon as the socket is
- * closed, or that the process has been crashed.
+ * logic. It ensure that no messages are processed once the process has been crashed.
  */
-public class FIFOReceiverThread extends Thread {
+public class FIFOReceiver extends Thread {
 
 	public FIFOBroadcast process;
 
-	public FIFOReceiverThread(FIFOBroadcast process) {
-		//Process.LOGGER.log(Level.FINE, "Creating instance of FIFOReceiverThread now");
+	public FIFOReceiver(FIFOBroadcast process) {
 		this.process = process;
 	}
 

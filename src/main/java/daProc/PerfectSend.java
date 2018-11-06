@@ -9,18 +9,18 @@ import utils.Message;
 import utils.Peer;
 
 /**
- * This class implements the perfect link logic as a thread for each message to
- * send. The thread is put to sleep more and more time after each attempt to
- * broadcast the message so not to waste resources, but comply with the
- * theoritical bases.
+ * This class implements the perfect link logic as a thread for each message to send.
+ * The thread is put to sleep for an increasing amount of time after each broadcast
+ * of the message to minimize resource requirements, but comply with the theoretical bases.
  *
  */
-public class PerfectSendThread extends Thread {
+public class PerfectSend extends Thread {
 
 	DatagramSocket socket;
 	ArrayList<Peer> peers;
 	Message message;
 	int sleepTime = 10;
+	boolean firstRun;
 
 	/**
 	 * Constructor of the thread
@@ -29,39 +29,46 @@ public class PerfectSendThread extends Thread {
 	 * @param peers  : list of peers to broadcast the message to
 	 * @param socket : socket to send the message from
 	 */
-	public PerfectSendThread(Message msg, ArrayList<Peer> peers, DatagramSocket socket) {
+	public PerfectSend(Message msg, ArrayList<Peer> peers, DatagramSocket socket) {
 		this.message = msg.clone();
 		this.peers = peers;
 		this.socket = socket;
-		// FIFOBroadcast.LOGGER.log(Level.FINE, "Instantiating PerfectSendThread");
+		this.firstRun = true;
 	}
 
 	public void run() {
+		sendMessages();
+	}
+
+	void sendMessages() {
 		byte[] sendBuffer;
+		// Format the data to be sent and extract it from the Message data structure
+		message.setPeerID(FIFOBroadcast.id);
+		sendBuffer = (Integer.toString(message.getOrigin()) + ":" + Integer.toString(message.getSn()) + ":"
+				+ Integer.toString(message.getPeerID())).getBytes();
 
 		// While the thread runs, send the message corresponding to the current seq_num
 		// of the parent process
 		while (true) {
 
-			// Format the data to be sent and extract it from the Message data structure
-			sendBuffer = (Integer.toString(message.getOrigin()) + ":" + Integer.toString(message.getSn())).getBytes();
-
 			// Send a packet containing the data of the message to send to all peers
 			for (Peer peer : this.peers) {
 				DatagramPacket packet = new DatagramPacket(sendBuffer, sendBuffer.length, peer.inetAddress, peer.port);
 				try {
-					socket.send(packet);
+					if (!(FIFOBroadcast.crashed)) {
+						socket.send(packet);
+					}
 				} catch (java.net.SocketException e) {
-					Process.LOGGER.log(Level.WARNING, "Cannot send the message, the socket is closed");
+					Process.LOGGER.log(Level.WARNING,
+							"Cannot send the message, the socket is closed for process " + FIFOBroadcast.id);
 				} catch (java.io.IOException e) {
 					Process.LOGGER.log(Level.WARNING, "Error while sending DatagramPacket");
 					e.printStackTrace();
 				}
 			}
-			
-			//TODO should only log the broadcast of the messages that are our own no?
-			// Log the broadcast of the message
-			Process.writeLogLine("b " + message.getSn());
+
+			// Acknowledge the messages we send if this is the first attempt at sending it
+			logBroadcast();
 
 			// Slow down the infinite thread
 			try {
@@ -70,6 +77,16 @@ public class PerfectSendThread extends Thread {
 			} catch (InterruptedException e1) {
 				e1.printStackTrace();
 			}
+		}
+	}
+
+	void logBroadcast() {
+		if (this.firstRun) {
+			if (FIFOBroadcast.id == message.getOrigin()) {
+				Process.writeLogLine("b " + message.getSn());
+			}
+			FIFOBroadcast.addAck(message);
+			this.firstRun = false;
 		}
 	}
 }

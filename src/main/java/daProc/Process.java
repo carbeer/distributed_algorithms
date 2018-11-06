@@ -5,6 +5,7 @@ import java.net.DatagramSocket;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import sun.misc.Signal;
@@ -13,8 +14,7 @@ import utils.Message;
 import utils.Peer;
 
 /**
- * Class Process Describe the properties and method of a process simulating a
- * host.
+ * Class Process implements the properties and methods of a node
  *
  */
 public class Process {
@@ -109,12 +109,12 @@ public class Process {
 		try {
 			writeLogsToFile();
 			// TODO: Only for benchmarking - Remove this later on!
+            int msgDelivered = 0;
 			for (Peer p : Process.peers) {
-				LOGGER.log(Level.INFO, String.format("PROC %d: The latest delivered message by peer %s is %d",
-						FIFOBroadcast.id, p.id, FIFOBroadcast.fifoNext.get(p.id) - 1));
-			}
-			LOGGER.log(Level.INFO, String.format("PROC %d: The latest delivered message by peer %s is %d",
-					FIFOBroadcast.id, FIFOBroadcast.id, FIFOBroadcast.fifoNext.get(FIFOBroadcast.id) - 1));
+				msgDelivered += FIFOBroadcast.fifoNext.get(p.id) - 1;
+            }
+            msgDelivered += FIFOBroadcast.fifoNext.get(id) - 1;
+			LOGGER.log(Level.INFO, String.format("PROC %d: Delivered a total of %d messages", id, msgDelivered));
 		} catch (Exception e) {
 			LOGGER.log(Level.SEVERE, "Process " + id + " Couldn't write the logs... We're screwed!");
 			e.printStackTrace();
@@ -141,7 +141,7 @@ public class Process {
 
 	/**
 	 * Method to add a log event to the log variable
-	 * @param string : log event to write
+	 * @param s : log event to write
 	 */
 	public static synchronized void writeLogLine(String s) {
 		if (!crashed) {
@@ -150,17 +150,9 @@ public class Process {
 		}
 	}
 
-	public DatagramSocket getSocket() {
-		return socket;
-	}
-
-	public ArrayList<Peer> getPeers() {
-		return peers;
-	}
-
 	/**
 	 * Method to parse the membership file to our data structure
-	 * @param file : membership file
+	 * @param f : membership file
 	 * @param procID : id of the process
 	 * @return ArrayList of all peers set up in the membership file (including self)
 	 */
@@ -187,14 +179,9 @@ public class Process {
 		return initPeers;
 	}
 
-	
-	public static boolean isCrashed() {
-		return crashed;
-	}
-
 	/**
 	 * Method used to update the acknowledgment variable of the current process by adding the msg in argument to it
-	 * @param msg to acknlowledge
+	 * @param msg to acknowledge
 	 */
 	public static synchronized void addAck(Message msg) {
 		msgAck.get(msg).add(msg.getPeerID());
@@ -216,4 +203,20 @@ public class Process {
 	public static HashSet<Integer> getAck(Message msg) {
 		return msgAck.get(msg);
 	}
+
+    /**
+     * Getter for the Socket of the Process
+     * @return socket
+     */
+    public DatagramSocket getSocket() {
+        return socket;
+    }
+
+    /**
+     * Getter for the Peers of the process
+     * @return peers
+     */
+    public ArrayList<Peer> getPeers() {
+        return peers;
+    }
 }
