@@ -1,4 +1,4 @@
-# Distributed Algorithms - Project 1 - Team 32
+# Distributed Algorithms - Project 1 - Team 33
 
 ## TODO
 - clean_up files and prepare submission
