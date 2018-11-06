@@ -106,13 +106,6 @@ public class Process {
 		crashed = true;
 		try {
 			writeLogsToFile();
-			// TODO: Only for benchmarking - Remove this later on!
-            int msgDelivered = 0;
-			for (Peer p : Process.peers) {
-				msgDelivered += FIFOBroadcast.fifoNext.get(p.id) - 1;
-            }
-            msgDelivered += FIFOBroadcast.fifoNext.get(id) - 1;
-			System.out.print(String.format("PROC %d: Delivered a total of %d messages\n", id, msgDelivered));
 		} catch (Exception e) {
 			LOGGER.log(Level.SEVERE, "Process " + id + " Couldn't write the logs... We're screwed!");
 			e.printStackTrace();

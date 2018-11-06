@@ -11,10 +11,7 @@ import utils.Peer;
 
 /**
  * This class implements the FIFO broadcast logic on top of the perfect link
- * logic as a thread for each message to send. It ensures that messages are sent
- * in order, and that no messages are processed once the process has been crashed.
- * The thread is put to sleep for an increasing amount of time after each broadcast
- * of the message to minimize resource requirements, but comply with the theoretical bases.
+ * logic as a thread for each message to send.
  *
  */
 public class FIFOSend extends Thread {
@@ -38,6 +35,7 @@ public class FIFOSend extends Thread {
 					}
 				}
 
+				// Start broadcast of the message once the previous message has been broadcast
 				FIFOBroadcast.broadcast(message);
 				FIFOBroadcast.seqNumber++;
 			} else {

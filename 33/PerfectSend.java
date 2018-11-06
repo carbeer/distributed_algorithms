@@ -48,7 +48,7 @@ public class PerfectSend extends Thread {
 		sendBuffer = (Integer.toString(message.getOrigin()) + ":" + Integer.toString(message.getSn()) + ":"
 				+ Integer.toString(message.getPeerID())).getBytes();
 
-		// While the thread runs, send the message corresponding to the current seq_num
+		// While the thread runs, send the message corresponding to the current sequence number
 		// of the parent process
 		while (true) {
 			if (FIFOBroadcast.startBroadcast) {
@@ -69,8 +69,6 @@ public class PerfectSend extends Thread {
 						e.printStackTrace();
 					}
 				}
-
-				// Acknowledge the messages we send if this is the first attempt at sending it
 				logBroadcast();
 
 				// Slow down the infinite thread
@@ -81,9 +79,9 @@ public class PerfectSend extends Thread {
 					e1.printStackTrace();
 				}
 			} else {
-				// Slow down the infinite thread
+				// Wait for the broadcast to begin
 				try {
-					Thread.sleep(2);
+					Thread.sleep(5);
 				} catch (InterruptedException e1) {
 					e1.printStackTrace();
 				}
@@ -91,11 +89,12 @@ public class PerfectSend extends Thread {
 		}
 	}
 
+	/**
+	 * Log the broadcast message if this is the first attempt at sending it
+	 */
 	void logBroadcast() {
 		if (this.firstRun) {
 			if (message.getOrigin() == FIFOBroadcast.id) {
-				if (Arrays.toString(FIFOBroadcast.getAck(message).toArray()).isEmpty())
-					System.out.print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!IT HAPPEND!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
 				Process.writeLogLine("b " + message.getSn());
 			}
 			FIFOBroadcast.addAck(message);
