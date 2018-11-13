@@ -154,13 +154,26 @@ public class Process {
 			String line;
 			String[] splitted;
 			Peer temp = null;
+			int nr_processes = 0;
 			while ((line = b.readLine()) != null) {
 				splitted = line.split("\\s+");
-				if (Integer.valueOf(splitted[0]) != procID && splitted.length == 3) {
-					initPeers.add(new Peer(splitted[1], Integer.valueOf(splitted[2]), Integer.valueOf(splitted[0])));
+				if(splitted.length == 1){
+					nr_processes = splitted[0];
 				}
-				if (Integer.valueOf(splitted[0]) == procID && splitted.length == 3) {
-					temp = new Peer(splitted[1], Integer.valueOf(splitted[2]), Integer.valueOf(splitted[0]));
+
+				// Gather information on the peers : their IP and port
+				if(Integer.valueOf(splitted[0]) <= nr_processes){
+					if (Integer.valueOf(splitted[0]) != procID && splitted.length == 3) {
+						initPeers.add(new Peer(splitted[1], Integer.valueOf(splitted[2]), Integer.valueOf(splitted[0])));
+					}
+					if (Integer.valueOf(splitted[0]) == procID && splitted.length == 3) {
+						temp = new Peer(splitted[1], Integer.valueOf(splitted[2]), Integer.valueOf(splitted[0]));
+					}
+				}
+
+				// Gather infromation on localized causal dependancies
+				else {
+					// TODO
 				}
 			}
 			initPeers.add(0, temp);

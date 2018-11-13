@@ -15,5 +15,4 @@ classes/
 
 # Clean
 *.out
-jdk1.8.0_191/
 logs/
