@@ -177,6 +177,25 @@ public class FIFOBroadcast extends Process {
 		return false;
 	}
 
+	public static Message setMessageDependencies(Message msg){
+		// TODO extract the dependencies and add them to the msg dependencies like this
+		
+		// find the process dependancies and the latest message delivered for those dependencies
+		// like a vector clock
+		// Say the output are those 2 dummies message dependancies
+		dummy_dependency1 = Message(2, 32);
+		dummy_dependency2 = Message(4, 21);
+
+		ArrayList<Message> dependencies = new ArrayList<Message>();
+		dependencies.add(dummy_dependency1);
+		dependencies.add(dummy_dependency2);
+	
+		Message message = msg;
+		message.setDependencies(dependencies);
+
+		return message;
+	}
+
 	/**
 	 * Main method of our process. Is called to initialize our process.
 	 * 

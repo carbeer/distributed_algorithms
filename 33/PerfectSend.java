@@ -45,8 +45,20 @@ public class PerfectSend extends Thread {
 		byte[] sendBuffer;
 		// Format the data to be sent and extract it from the Message data structure
 		message.setPeerID(FIFOBroadcast.id);
-		sendBuffer = (Integer.toString(message.getOrigin()) + ":" + Integer.toString(message.getSn()) + ":"
-				+ Integer.toString(message.getPeerID())).getBytes();
+
+		String message_to_send = Integer.toString(message.getOrigin()) + ":" + Integer.toString(message.getSn()) + ":"
+		+ Integer.toString(message.getPeerID());
+
+		// TODO append dependencies messages to message_to_send as
+		// :originId(dependency1):message_seq(dependency1):originId(dependency2):message_seq(dependency2)
+		// Or change receving structure in the class Message
+		
+		for (Message msg : message.getDependencies()) { 		      
+			message_to_send = message_to_send.concat(":" + msg.getOrigin());
+			message_to_send = message_to_send.concat(":" + msg.getSn());
+	   	}
+
+		sendBuffer = message_to_send.getBytes();
 
 		// While the thread runs, send the message corresponding to the current sequence number
 		// of the parent process

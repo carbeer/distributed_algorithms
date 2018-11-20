@@ -35,6 +35,9 @@ public class FIFOSend extends Thread {
 					}
 				}
 
+				// Set message dependencies
+				message = FIFOBroadcast.setMessageDependencies(message);
+
 				// Start broadcast of the message once the previous message has been broadcast
 				FIFOBroadcast.broadcast(message);
 				FIFOBroadcast.seqNumber++;
