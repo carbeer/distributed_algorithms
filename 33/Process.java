@@ -27,6 +27,7 @@ public class Process {
 	static volatile boolean crashed = false;
 	static int seqNumber = 1;
 	static ArrayList<Peer> peers;
+	static ArrayList<Integer> process_dependancies;
 	private static volatile HashMap<Message, HashSet<Integer>> msgAck = new HashMap<>();;
 	static private String logs = "";
 	static FileWriter writer;
@@ -56,6 +57,7 @@ public class Process {
 		// Reads the membership file and gather information about the processes
 		File membershipPath = new File(System.getProperty("user.dir") + File.separator + membership);
 		this.peers = readMembership(membershipPath, id);
+		this.process_dependancies = readDependancies(membershipPath, id);
 		this.ip = peers.get(0).address;
 		this.port = Integer.valueOf(peers.get(0).port);
 		peers.remove(0);
@@ -143,7 +145,7 @@ public class Process {
 
 	/**
 	 * Method to parse the membership file to our data structure
-	 * @param f : membership file
+	 * @param f : membership file path
 	 * @param procID : id of the process
 	 * @return ArrayList of all peers set up in the membership file (including self)
 	 */
@@ -152,17 +154,20 @@ public class Process {
 		try {
 			BufferedReader b = new BufferedReader(new FileReader(f));
 			String line;
+			int line_nr = 0;
 			String[] splitted;
 			Peer temp = null;
 			int nr_processes = 0;
 			while ((line = b.readLine()) != null) {
 				splitted = line.split("\\s+");
-				if(splitted.length == 1){
-					nr_processes = splitted[0];
+
+				// Finds out how many processes there is
+				if((splitted.length == 1) && (line_nr ==0)){
+					nr_processes = Integer.valueOf(splitted[0]);
 				}
 
 				// Gather information on the peers : their IP and port
-				if(Integer.valueOf(splitted[0]) <= nr_processes){
+				if(line_nr <= nr_processes){
 					if (Integer.valueOf(splitted[0]) != procID && splitted.length == 3) {
 						initPeers.add(new Peer(splitted[1], Integer.valueOf(splitted[2]), Integer.valueOf(splitted[0])));
 					}
@@ -170,17 +175,53 @@ public class Process {
 						temp = new Peer(splitted[1], Integer.valueOf(splitted[2]), Integer.valueOf(splitted[0]));
 					}
 				}
-
-				// Gather infromation on localized causal dependancies
-				else {
-					// TODO
-				}
+				line_nr++;
 			}
 			initPeers.add(0, temp);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 		return initPeers;
+	}
+
+	/**
+	 * Method to read the causal dependancies from the membership file
+	 * @param f : membership file path
+	 * @param procID : id of the process
+	 * @return ArrayList of all peers dependancies of the process
+	 */
+	public ArrayList<Integer> readDependancies(File f, int procID) {
+		ArrayList<Integer> process_dependancies = new ArrayList<Integer>();
+		try {
+			BufferedReader b = new BufferedReader(new FileReader(f));
+			String line;
+			int line_nr = 0;
+			String[] splitted;
+			int nr_processes = 0;
+			while ((line = b.readLine()) != null) {
+				splitted = line.split("\\s+");
+
+				// Finds out how many processes there is
+				if((splitted.length == 1) && (line_nr ==0)){
+					nr_processes = Integer.valueOf(splitted[0]);
+				}
+
+				// Gather infromation on localized causal dependancies
+				if((line_nr > nr_processes) && (line_nr <=2*nr_processes) && (Integer.valueOf(splitted[0]) == procID)){
+					// Check if empty dependancies
+					if (splitted.length > 0) {
+						for (int i = 1; i < splitted.length; i++){
+						process_dependancies.add(Integer.valueOf(splitted[i]));
+						}
+					}
+				}
+				line_nr++;
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		return process_dependancies;
 	}
 
 	/**
