@@ -183,8 +183,7 @@ public class FIFOBroadcast extends Process {
 	 * @param msg
 	 * @return msg with updated dependancies
 	 */
-	public static Message setMessageDependencies(Message msg, ArrayList<Integer> process_dependancies){
-		// TODO extract the dependencies and add them to the msg dependencies like this
+	public static Message setMessageDependencies(Message msg){
 		// dependencies are the latest messages delivered from the dependancies processes
 		
 		// find the process dependancies and the latest message delivered for those dependencies
@@ -192,22 +191,18 @@ public class FIFOBroadcast extends Process {
 		// Say th process depends on proc 2 and 4, and the latest messages delivered are those
 		// 2 dummies message dependancies 
 	
-		//processdependancy1 = Message(2, 32);
-		//processdependancy2 = Message(4, 21);
-		//  dependencies.add(processdependancy1);
-		//	dependencies.add(processdependancy2);
+		// processdependancy1 = Message(2, 32);
+		// processdependancy2 = Message(4, 21);
+		// dependencies.add(processdependancy1);
+		// dependencies.add(processdependancy2);
 
 		if (!process_dependancies.isEmpty){
 			ArrayList<Message> dependencies = new ArrayList<Message>();
 
 			for(int proc_dep : process_dependancies){
-
-				// TODO get latest messsage delevered from that each peer in dependancies
-				// and remove "dummy"
-				int dummy=1;
-				msg_dep = Message(proc_dep, dummy);//get latest message delivered);
+				// fifoNext.get(proc_dep)-1 is the seqnumber of the latest message delivered sofar
+				msg_dep = Message(proc_dep, fifoNext.get(proc_dep)-1);
 				dependencies.add(msg_dep);
-
 			}
 
 			Message message = msg;
