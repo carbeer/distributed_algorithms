@@ -177,21 +177,25 @@ public class FIFOBroadcast extends Process {
 		return false;
 	}
 
-	public static Message setMessageDependencies(Message msg){
+	public static Message setMessageDependencies(Message msg, ArrayList<Integer> process_dependancies){
 		// TODO extract the dependencies and add them to the msg dependencies like this
+		// dependencies are the latest messages delivered from the dependancies processes
 		
 		// find the process dependancies and the latest message delivered for those dependencies
 		// like a vector clock
-		// Say the output are those 2 dummies message dependancies
-		dummy_dependency1 = Message(2, 32);
-		dummy_dependency2 = Message(4, 21);
-
-		ArrayList<Message> dependencies = new ArrayList<Message>();
-		dependencies.add(dummy_dependency1);
-		dependencies.add(dummy_dependency2);
+		// Say th process depends on proc 2 and 4, and the latest messages delivered are those
+		// 2 dummies message dependancies 
+		if (!process_dependancies.isEmpty){
+			processdependancy1 = Message(2, 32);
+			processdependancy2 = Message(4, 21);
 	
-		Message message = msg;
-		message.setDependencies(dependencies);
+			ArrayList<Message> dependencies = new ArrayList<Message>();
+			dependencies.add(processdependancy1);
+			dependencies.add(processdependancy2);
+		
+			Message message = msg;
+			message.setDependencies(dependencies);
+		}
 
 		return message;
 	}
