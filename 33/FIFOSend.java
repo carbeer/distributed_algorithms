@@ -35,8 +35,12 @@ public class FIFOSend extends Thread {
 					}
 				}
 
-				// Set message dependencies
-				message = FIFOBroadcast.setMessageDependencies(message);
+				// Set message dependencies of the process
+
+				// TODO verify that this does not confilcts with retransmitting messages that are not our own!!
+				// Update : it should not, since we broadcast messages that are not our our through perfect links and not 
+				// this method. @ Carolin, could you double check?
+				message = FIFOBroadcast.setMessageDependencies(message, FIFOBroadcast.process_dependancies);
 
 				// Start broadcast of the message once the previous message has been broadcast
 				FIFOBroadcast.broadcast(message);
