@@ -1,13 +1,3 @@
-package daProc;
-
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.logging.Level;
-
-import utils.Message;
-import utils.Peer;
 
 /**
  * This class implements the FIFO broadcast logic on top of the perfect link
@@ -36,11 +26,9 @@ public class FIFOSend extends Thread {
 				}
 
 				// Set message dependencies of the process
-
-				// TODO verify that this does not confilcts with retransmitting messages that are not our own!!
-				// Update : it should not, since we broadcast messages that are not our our through perfect links and not 
+				// Update : it should not, since we broadcast messages that are not our our through perfect links and not
 				// this method. @Carolin, could you double check?
-				message = FIFOBroadcast.setMessageDependencies(message, FIFOBroadcast.process_dependancies);
+				message = FIFOBroadcast.setMessageDependencies(message);
 
 				// Start broadcast of the message once the previous message has been broadcast
 				FIFOBroadcast.broadcast(message);

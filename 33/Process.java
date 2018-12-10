@@ -1,16 +1,13 @@
-package daProc;
 
 import java.io.*;
 import java.net.DatagramSocket;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import sun.misc.Signal;
 import sun.misc.SignalHandler;
-import utils.Message;
 import utils.Peer;
 
 /**
@@ -27,7 +24,7 @@ public class Process {
 	static volatile boolean crashed = false;
 	static int seqNumber = 1;
 	static ArrayList<Peer> peers;
-	static ArrayList<Integer> process_dependancies;
+	static ArrayList<Integer> process_dependencies;
 	private static volatile HashMap<Message, HashSet<Integer>> msgAck = new HashMap<>();;
 	static private String logs = "";
 	static FileWriter writer;
@@ -57,7 +54,7 @@ public class Process {
 		// Reads the membership file and gather information about the processes
 		File membershipPath = new File(System.getProperty("user.dir") + File.separator + membership);
 		this.peers = readMembership(membershipPath, id);
-		this.process_dependancies = readDependancies(membershipPath, id);
+		this.process_dependencies = readDependencies(membershipPath, id);
 		this.ip = peers.get(0).address;
 		this.port = Integer.valueOf(peers.get(0).port);
 		peers.remove(0);
@@ -185,13 +182,13 @@ public class Process {
 	}
 
 	/**
-	 * Method to read the causal dependancies from the membership file
+	 * Method to read the causal dependencies from the membership file
 	 * @param f : membership file path
 	 * @param procID : id of the process
-	 * @return ArrayList of all peers dependancies of the process
+	 * @return ArrayList of all peers dependencies of the process
 	 */
-	public ArrayList<Integer> readDependancies(File f, int procID) {
-		ArrayList<Integer> process_dependancies = new ArrayList<Integer>();
+	public ArrayList<Integer> readDependencies(File f, int procID) {
+		ArrayList<Integer> process_dependencies = new ArrayList<Integer>();
 		try {
 			BufferedReader b = new BufferedReader(new FileReader(f));
 			String line;
@@ -211,7 +208,7 @@ public class Process {
 					// Check if empty dependancies
 					if (splitted.length > 0) {
 						for (int i = 1; i < splitted.length; i++){
-						process_dependancies.add(Integer.valueOf(splitted[i]));
+						process_dependencies.add(Integer.valueOf(splitted[i]));
 						}
 					}
 				}
@@ -221,7 +218,7 @@ public class Process {
 			e.printStackTrace();
 		}
 
-		return process_dependancies;
+		return process_dependencies;
 	}
 
 	/**

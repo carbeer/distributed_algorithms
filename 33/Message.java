@@ -1,11 +1,6 @@
-package utils;
-
-import daProc.FIFOBroadcast;
 
 import java.net.DatagramPacket;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
 import java.util.Objects;
 import java.util.logging.Level;
 
@@ -33,16 +28,15 @@ public class Message implements Comparable<Message> {
         this.peerID = Integer.parseInt(splitted[2].trim());
 
         // Assumed packet = origin_id:sn:peerID:originId(dependency1):message_seq(dependency1):originId(dependency2):message_seq(dependency2)
-        ArrayList<Message> message_dependencies = new ArrayList<Message>();
+        ArrayList<Message> dep = new ArrayList<Message>();
         if (splitted.length > 3) {
             for (int i = 3; i < splitted.length; i = i + 2){
-                Message temp = Message(splitted[i], splitted[i + 1], 0);
-                message_dependencies.add(temp);
+                Message temp = new Message(Integer.parseInt(splitted[i]), Integer.parseInt(splitted[i + 1]), 0);
+                dep.add(temp);
             }
         }
-        this.dependencies = message_dependencies;
+        this.dependencies = dep;
     }
-
 
     /**
      * This method compares to messages to each other.
@@ -90,6 +84,20 @@ public class Message implements Comparable<Message> {
 
     public ArrayList<Message> getDependencies() {
         return this.dependencies;
+    }
+
+    public String getMessageContent() {
+        String cont = String.valueOf(originId);
+        cont = cont.concat(":" + String.valueOf(this.sn));
+        cont = cont.concat(":" + String.valueOf(this.peerID));
+
+        // :originId(dependency1):message_seq(dependency1):originId(dependency2):message_seq(dependency2)
+        // Or change receiving structure in the class Message
+        for (Message msg : this.dependencies) {
+            cont = cont.concat(":" + msg.getOrigin());
+            cont = cont.concat(":" + msg.getSn());
+        }
+        return cont;
     }
 
 

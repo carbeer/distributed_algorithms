@@ -1,6 +1,3 @@
-package daProc;
-
-import utils.Message;
 import java.util.*;
 import java.util.logging.Level;
 import utils.Peer;
@@ -15,6 +12,7 @@ public class FIFOBroadcast extends Process {
 	static HashMap<Integer, Integer> fifoNext = new HashMap<>();
 	// Amount of messages that shall be sent by this process
 	static int nrMessages;
+
 
 	/**
 	 * FIFOBroadcast Process constructor. Takes cmd arguments to initialize the
@@ -196,20 +194,18 @@ public class FIFOBroadcast extends Process {
 		// dependencies.add(processdependancy1);
 		// dependencies.add(processdependancy2);
 
-		if (!process_dependancies.isEmpty){
+		if (!process_dependencies.isEmpty()){
 			ArrayList<Message> dependencies = new ArrayList<Message>();
 
-			for(int proc_dep : process_dependancies){
-				// fifoNext.get(proc_dep)-1 is the seqnumber of the latest message delivered sofar
-				msg_dep = Message(proc_dep, fifoNext.get(proc_dep)-1);
+			for(int proc_dep : process_dependencies){
+				// fifoNext.get(proc_dep)-1 is the seqnumber of the latest message delivered so far
+				Message msg_dep = new Message(proc_dep, fifoNext.get(proc_dep)-1, 0);
 				dependencies.add(msg_dep);
 			}
 
-			Message message = msg;
-			message.setDependencies(dependencies);
+			msg.setDependencies(dependencies);
 		}
-
-		return message;
+		return msg;
 	}
 
 	/**

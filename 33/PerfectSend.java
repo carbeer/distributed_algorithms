@@ -1,12 +1,10 @@
-package daProc;
+
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.logging.Level;
 
-import utils.Message;
 import utils.Peer;
 
 /**
@@ -46,19 +44,9 @@ public class PerfectSend extends Thread {
 		// Format the data to be sent and extract it from the Message data structure
 		message.setPeerID(FIFOBroadcast.id);
 
-		String message_to_send = Integer.toString(message.getOrigin()) + ":" + Integer.toString(message.getSn()) + ":"
-		+ Integer.toString(message.getPeerID());
 
-		// TODO append dependencies messages to message_to_send as
-		// :originId(dependency1):message_seq(dependency1):originId(dependency2):message_seq(dependency2)
-		// Or change receving structure in the class Message
-		
-		for (Message msg : message.getDependencies()) { 		      
-			message_to_send = message_to_send.concat(":" + msg.getOrigin());
-			message_to_send = message_to_send.concat(":" + msg.getSn());
-	   	}
 
-		sendBuffer = message_to_send.getBytes();
+		sendBuffer = message.getMessageContent().getBytes();
 
 		// While the thread runs, send the message corresponding to the current sequence number
 		// of the parent process
