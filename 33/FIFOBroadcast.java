@@ -1,6 +1,5 @@
 import java.util.*;
 import java.util.logging.Level;
-import utils.Peer;
 
 /**
  * FIFOBroadcast implements the properties and methods of a node with FIFO broadcast logic.
@@ -98,6 +97,13 @@ public class FIFOBroadcast extends Process {
 			}
 			// Just look at the first element and check if it can be delivered
 			if ((getAck(msg).size() > peers.size() / 2) && (msg.getSn() == fifoNext.get(msg.getOrigin()))) {
+
+				// Check whether the dependencies are all delivered
+				for (Message dep : msg.getDependencies()) {
+					if (!isDelivered(dep)) {
+						return;
+					}
+				}
 
 				// Deliver the message
 				fifoNext.put(msg.getOrigin(), fifoNext.get(msg.getOrigin()) + 1);

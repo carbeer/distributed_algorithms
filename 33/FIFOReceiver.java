@@ -1,8 +1,6 @@
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.util.HashSet;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Class FIFOReceiver handles the reception of datagrams through the

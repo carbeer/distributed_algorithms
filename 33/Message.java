@@ -9,6 +9,7 @@ public class Message implements Comparable<Message> {
     private int originId;
     private int sn;
     private int peerID;
+    // TODO: Possibly change to static array to improve performance
     private ArrayList<Message> dependencies;
 
     public Message(int originId, int sn, int peerID) {

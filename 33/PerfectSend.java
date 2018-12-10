@@ -1,11 +1,8 @@
-
-
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.util.ArrayList;
 import java.util.logging.Level;
 
-import utils.Peer;
 
 /**
  * This class implements the perfect link logic as a thread for each message to send.

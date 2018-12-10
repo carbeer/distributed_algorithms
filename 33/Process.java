@@ -1,4 +1,3 @@
-
 import java.io.*;
 import java.net.DatagramSocket;
 import java.util.ArrayList;
@@ -8,7 +7,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import sun.misc.Signal;
 import sun.misc.SignalHandler;
-import utils.Peer;
+
 
 /**
  * Class Process implements the properties and methods of a node
