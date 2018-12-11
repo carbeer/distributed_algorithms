@@ -41,7 +41,7 @@ public class FIFOSend extends Thread {
 				// Update : it should not, since we broadcast messages that are not our our through perfect links and not 
 				// this method.
 				// @Carolin, could you double check?
-				message = FIFOBroadcast.setMessageDependencies(message);
+				//message = FIFOBroadcast.setMessageDependencies(message);
 
 				// Start broadcast of the message once the previous message has been broadcast
 				FIFOBroadcast.broadcast(message);

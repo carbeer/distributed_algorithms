@@ -1,7 +1,6 @@
 package utils;
 
 import java.net.InetAddress;
-
 /**
  * Datastructure representing a peer, and containing all useful variables depicting it
  *
