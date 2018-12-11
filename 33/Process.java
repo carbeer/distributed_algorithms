@@ -62,7 +62,6 @@ public class Process {
 		this.ip = peers.get(0).address;
 		this.port = Integer.valueOf(peers.get(0).port);
 		peers.remove(0);
-
 		// Create socket to send messages to and from
 		try {
 			this.socket = new DatagramSocket(this.port);

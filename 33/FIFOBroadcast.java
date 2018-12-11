@@ -204,17 +204,28 @@ public class FIFOBroadcast extends Process {
 		// dependencies.add(processdependancy1);
 		// dependencies.add(processdependancy2);
 
+		//if (id==1){
+		//System.out.println(" yoloing"+fifoNext.get(5)+" \n");
+		//}
+
 		if (!process_dependencies.isEmpty()){
 			ArrayList<Message> dependencies = new ArrayList<Message>();
 
+			if(FIFOBroadcast.id==1){
+			System.out.print("fr " +fifoNext.get(5) +"\n" );
+			}
+
 			for(int proc_dep : process_dependencies){
-				// fifoNext.get(proc_dep)-1 is the seqnumber of the latest message delivered so far
-				Message msg_dep = new Message(proc_dep, fifoNext.get(proc_dep)-1, 0);
-				dependencies.add(msg_dep);
+				if (fifoNext.get(proc_dep)>1){
+					// fifoNext.get(proc_dep)-1 is the seqnumber of the latest message delivered so far
+					Message msg_dep = new Message(proc_dep, fifoNext.get(proc_dep)-1, 0);
+					dependencies.add(msg_dep);
+				}
 			}
 
 			msg.setDependencies(dependencies);
 		}
+
 		return msg;
 	}
 

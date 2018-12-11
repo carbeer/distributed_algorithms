@@ -8,9 +8,9 @@
 
 # time to wait for correct processes to broadcast all messages (in seconds)
 # (should be adapted to the number of messages to send)
-time_to_finish=2
+time_to_finish=3
 
-init_time=6
+init_time=2
 
 # configure lossy network simulation
 sudo tc qdisc add dev lo root netem 2>/dev/null
@@ -29,17 +29,27 @@ echo "5
 2 1
 3 1 2
 4
-5 3 4" > membership
+5" > membership
 
 # start 5 processes, each broadcasting 100 messages
 for i in `seq 1 5`
 do
-    java Da_proc $i membership 1000 &
+    java Da_proc $i membership 100 &
     da_proc_id[$i]=$!
 done
 
 # leave some time for process initialization
 sleep $init_time
+
+#start broadcasting
+for i in `seq 1 5`
+do
+    if [ -n "${da_proc_id[$i]}" ]; then
+	kill -USR2 "${da_proc_id[$i]}"
+    fi
+done
+
+sleep $time_to_finish
 
 # stop all processes
 for i in `seq 1 5`

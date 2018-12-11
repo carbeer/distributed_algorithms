@@ -27,17 +27,17 @@ public class Message implements Comparable<Message> {
     public Message(DatagramPacket packet) {
         // Read data from packet
         String[] splitted = new String(packet.getData()).split(":");
-        FIFOBroadcast.LOGGER.log(Level.FINE, "Received a message: " + splitted[0] + " " + splitted[1].trim());
+        FIFOBroadcast.LOGGER.log(Level.FINE, "Received a message: " + splitted[0].trim() + " " + splitted[1].trim());
         // Get data from packet
         this.originId = Integer.parseInt(splitted[0].trim());
         this.sn = Integer.parseInt(splitted[1].trim());
         this.peerID = Integer.parseInt(splitted[2].trim());
-
+        
         // Assumed packet = origin_id:sn:peerID:originId(dependency1):message_seq(dependency1):originId(dependency2):message_seq(dependency2)
         ArrayList<Message> dep = new ArrayList<Message>();
         if (splitted.length > 3) {
             for (int i = 3; i < splitted.length; i = i + 2){
-                Message temp = new Message(Integer.parseInt(splitted[i]), Integer.parseInt(splitted[i + 1]), 0);
+                Message temp = new Message(Integer.parseInt(splitted[i].trim()), Integer.parseInt(splitted[i + 1].trim()), 0);
                 dep.add(temp);
             }
         }
@@ -89,7 +89,7 @@ public class Message implements Comparable<Message> {
     }
 
     public ArrayList<Message> getDependencies() {
-        return this.dependencies;
+        return dependencies;
     }
 
     public String getMessageContent() {
