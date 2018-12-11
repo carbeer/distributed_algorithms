@@ -24,7 +24,12 @@ echo "5
 2 127.0.0.1 11002
 3 127.0.0.1 11003
 4 127.0.0.1 11004
-5 127.0.0.1 11005" > membership
+5 127.0.0.1 11005
+1 4 5
+2 1
+3 1 2
+4
+5 3 4" > membership
 
 # start 5 processes, each broadcasting 100 messages
 for i in `seq 1 5`
@@ -57,8 +62,6 @@ da_proc_id[4]=""
 kill -STOP "${da_proc_id[1]}" # pause process 1
 sleep 0.5
 kill -CONT "${da_proc_id[1]}" # resume process 1
-
-
 # leave some time for the correct processes to broadcast all messages
 sleep $time_to_finish
 
