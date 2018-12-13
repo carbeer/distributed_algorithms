@@ -8,7 +8,7 @@
 
 # time to wait for correct processes to broadcast all messages (in seconds)
 # (should be adapted to the number of messages to send)
-time_to_finish=30
+time_to_finish=20
 
 init_time=2
 
@@ -25,23 +25,23 @@ echo "5
 3 127.0.0.1 11003
 4 127.0.0.1 11004
 5 127.0.0.1 11005
-1 3
-2 1 4
-3  
-4 1 3
-5 4" > membership
+1 4 5
+2 1 3 4
+3 1 2
+4 5
+5 3 4 1" > membership
 
 # start 5 processes, each broadcasting 100 messages
 for i in `seq 1 5`
 do
-    java Da_proc $i membership 50 &
+    java Da_proc $i membership 70 &
     da_proc_id[$i]=$!
 done
 
 # leave some time for process initialization
 sleep $init_time
 
-#start broadcasting
+# start broadcasting
 for i in `seq 1 5`
 do
     if [ -n "${da_proc_id[$i]}" ]; then
@@ -49,6 +49,7 @@ do
     fi
 done
 
+# leave some time for the correct processes to broadcast all messages
 sleep $time_to_finish
 
 # stop all processes

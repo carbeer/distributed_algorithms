@@ -108,6 +108,7 @@ public class FIFOBroadcast extends Process {
 
 				// Check whether the dependencies are all delivered
 				for (Message dep : msg.getDependencies()) {
+					tryToDeliverPast(dep);
 					if (!isDelivered(dep)) {
 						return;
 					}
@@ -118,10 +119,63 @@ public class FIFOBroadcast extends Process {
 				writeLogLine("d " + msg.getOrigin() + " " + msg.getSn());
 
 				// Remove the first element now (as it has been used)
+				if (pq.isEmpty()) {
+					System.out.println(msg.getOrigin());
+				}
 				pq.poll();
 				continue;
 			}
 			return;
+		}
+	}
+
+	/**
+	 * Method that tries to deliver messages up until the sequence number of dep. No need to check for uniformity
+	 * as messages are part of a message past already.
+	 * @param dep
+	 * @return bool - Returns true is the message was able to be delivered
+	 */
+	public synchronized boolean tryToDeliverPast(Message dep) {
+		if (isDelivered(dep)) {
+			return true;
+		}
+		PriorityQueue<Message> pq = getPending(dep.getOrigin());
+		// Try to
+		while (true) {
+			Message msg = pq.peek();
+
+			// We are not having the desired sequence number
+			if (msg.getSn() > dep.getSn()) {
+				return false;
+			}
+
+			if (msg == null || getAck(msg) == null) {
+				return false;
+			}
+			// Look whether the message order would be preserved
+			if (msg.getSn() == fifoNext.get(msg.getOrigin())) {
+
+				// Check whether the dependencies are all delivered
+				for (Message m : msg.getDependencies()) {
+					if (!tryToDeliverPast(m)) {
+						return false;
+					}
+				}
+
+				// Deliver the message
+				fifoNext.put(msg.getOrigin(), fifoNext.get(msg.getOrigin()) + 1);
+				writeLogLine("d " + msg.getOrigin() + " " + msg.getSn());
+
+				// Remove the first element now (as it has been used)
+				pq.poll();
+
+				// Everything in the past was delivered
+				if (msg.getSn() == dep.getSn()) {
+					return true;
+				}
+				continue;
+			}
+			return false;
 		}
 	}
 
@@ -190,7 +244,7 @@ public class FIFOBroadcast extends Process {
 	}
 
 	/**
-	 * Add dependancies to a message
+	 * Add dependencies to a message
 	 * 
 	 * @param msg
 	 * @return msg with updated dependancies
@@ -239,7 +293,7 @@ public class FIFOBroadcast extends Process {
 	 * @param args : cmd arguments
 	 */
 	public static void main(String[] args) {
-		LOGGER.setLevel(Level.OFF);
+		LOGGER.setLevel(Level.FINE);
 		LOGGER.log(Level.FINE, "Entering the main method of the FIFOBroadcast");
 		try {
 			new FIFOBroadcast(args);
