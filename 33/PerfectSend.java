@@ -1,7 +1,13 @@
+package daProc;
+
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.logging.Level;
+
+import utils.Message;
+import utils.Peer;
 
 
 /**
@@ -27,6 +33,7 @@ public class PerfectSend extends Thread {
 	 */
 	public PerfectSend(Message msg, ArrayList<Peer> peers, DatagramSocket socket) {
 		this.message = msg.clone();
+		this.message.setDependencies(msg.getDependencies());
 		this.peers = peers;
 		this.socket = socket;
 		this.firstRun = true;
@@ -41,13 +48,16 @@ public class PerfectSend extends Thread {
 		// Format the data to be sent and extract it from the Message data structure
 		message.setPeerID(FIFOBroadcast.id);
 
-
+		//if (FIFOBroadcast.id==1){
+		//	System.out.println(" process 1 sending: "+message.getMessageContent()+"\n");
+		//}
 
 		sendBuffer = message.getMessageContent().getBytes();
 
 		// While the thread runs, send the message corresponding to the current sequence number
 		// of the parent process
 		while (true) {
+
 			if (FIFOBroadcast.startBroadcast) {
 				// Send a packet containing the data of the message to send to all peers
 				for (Peer peer : this.peers) {
@@ -66,7 +76,16 @@ public class PerfectSend extends Thread {
 						e.printStackTrace();
 					}
 				}
-				logBroadcast();
+
+				if (this.firstRun) {
+					if (message.getOrigin() == FIFOBroadcast.id) {
+						Process.writeLogLine("b " + message.getSn());
+					}
+					FIFOBroadcast.addAck(message);
+					
+					this.firstRun = false;
+				}
+
 
 				// Slow down the infinite thread
 				try {
@@ -90,6 +109,7 @@ public class PerfectSend extends Thread {
 	 * Log the broadcast message if this is the first attempt at sending it
 	 */
 	void logBroadcast() {
+
 		if (this.firstRun) {
 			if (message.getOrigin() == FIFOBroadcast.id) {
 				Process.writeLogLine("b " + message.getSn());

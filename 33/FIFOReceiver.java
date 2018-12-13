@@ -1,6 +1,13 @@
+package daProc;
+
+import utils.Message;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.util.HashSet;
 import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import daProc.FIFOBroadcast;
 
 /**
  * Class FIFOReceiver handles the reception of datagrams through the
@@ -16,7 +23,7 @@ public class FIFOReceiver extends Thread {
 
 		// Processes datagrams at the buffer as long as the process is live
 		while (!FIFOBroadcast.crashed) {
-			receiveBuffer = new byte[256];
+			receiveBuffer = new byte[512];
 			DatagramPacket packet = new DatagramPacket(receiveBuffer, receiveBuffer.length);
 			try {
 				socket.receive(packet);
@@ -26,6 +33,12 @@ public class FIFOReceiver extends Thread {
 					break;
 				}
 				Message message = new Message(packet);
+
+				//if (FIFOBroadcast.id==5){
+				//String slitted = new String(packet.getData());
+				//System.out.println(" process 5 receiing: "+slitted+"\n");
+				//}
+
 				FIFOBroadcast.receiveHandler(message);
 			} catch (java.net.SocketException e) {
 				Process.LOGGER.log(Level.WARNING, "Error while receiving DatagramPacket");

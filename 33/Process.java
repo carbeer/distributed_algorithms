@@ -1,12 +1,17 @@
+package daProc;
+
 import java.io.*;
 import java.net.DatagramSocket;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import sun.misc.Signal;
 import sun.misc.SignalHandler;
+import utils.Message;
+import utils.Peer;
 
 
 /**
@@ -57,7 +62,6 @@ public class Process {
 		this.ip = peers.get(0).address;
 		this.port = Integer.valueOf(peers.get(0).port);
 		peers.remove(0);
-
 		// Create socket to send messages to and from
 		try {
 			this.socket = new DatagramSocket(this.port);
@@ -198,7 +202,7 @@ public class Process {
 				splitted = line.split("\\s+");
 
 				// Finds out how many processes there is
-				if((splitted.length == 1) && (line_nr ==0)){
+				if((splitted.length == 1) && (line_nr ==0) ){
 					nr_processes = Integer.valueOf(splitted[0]);
 				}
 

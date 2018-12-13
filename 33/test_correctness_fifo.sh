@@ -8,9 +8,9 @@
 
 # time to wait for correct processes to broadcast all messages (in seconds)
 # (should be adapted to the number of messages to send)
-time_to_finish=2
+time_to_finish=40
 
-init_time=6
+init_time=4
 
 # configure lossy network simulation
 sudo tc qdisc add dev lo root netem 2>/dev/null
@@ -24,12 +24,8 @@ echo "5
 2 127.0.0.1 11002
 3 127.0.0.1 11003
 4 127.0.0.1 11004
-5 127.0.0.1 11005
-1 4 5
-2 1
-3 1 2
-4
-5 3 4" > membership
+5 127.0.0.1 11005" > membership
+
 
 # start 5 processes, each broadcasting 100 messages
 for i in `seq 1 5`
@@ -48,6 +44,7 @@ sleep 1
 kill -TERM "${da_proc_id[2]}" # crash process 2
 da_proc_id[2]=""
 kill -CONT "${da_proc_id[3]}" # resume process 3
+
 # start broadcasting
 for i in `seq 1 5`
 do
@@ -55,6 +52,7 @@ do
 	kill -USR2 "${da_proc_id[$i]}"
     fi
 done
+
 # do some more nasty stuff
 # example:
 kill -TERM "${da_proc_id[4]}" # crash process 4
