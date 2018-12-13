@@ -211,9 +211,9 @@ public class FIFOBroadcast extends Process {
 		if (!process_dependencies.isEmpty()){
 			ArrayList<Message> dependencies = new ArrayList<Message>();
 
-			if(FIFOBroadcast.id==1){
-			System.out.print("fr " +fifoNext.get(5) +"\n" );
-			}
+			//if(FIFOBroadcast.id==1){
+			//System.out.print("fr " +fifoNext.get(5) +"\n" );
+			//}
 
 			for(int proc_dep : process_dependencies){
 				if (fifoNext.get(proc_dep)>1){

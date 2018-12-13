@@ -34,10 +34,10 @@ public class FIFOReceiver extends Thread {
 				}
 				Message message = new Message(packet);
 
-				if (FIFOBroadcast.id==5){
-				String slitted = new String(packet.getData());
-				System.out.println(" process 5 receiing: "+slitted+"\n");
-				}
+				//if (FIFOBroadcast.id==5){
+				//String slitted = new String(packet.getData());
+				//System.out.println(" process 5 receiing: "+slitted+"\n");
+				//}
 
 				FIFOBroadcast.receiveHandler(message);
 			} catch (java.net.SocketException e) {
