@@ -58,9 +58,6 @@ def main():
     pass
       # print("Process %d: %d messages" % (key, len(value)))
 
-  # how many messages should have been sent by each process?
-  expected_messages = 10
-
   # messages broadcast by a process. idx -> array
   broadcast_by = {i: [] for i in processes}
 

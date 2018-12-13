@@ -8,9 +8,9 @@
 
 # time to wait for correct processes to broadcast all messages (in seconds)
 # (should be adapted to the number of messages to send)
-time_to_finish=40
+time_to_finish=30
 
-init_time=4
+init_time=2
 
 # configure lossy network simulation
 sudo tc qdisc add dev lo root netem 2>/dev/null
@@ -25,16 +25,16 @@ echo "5
 3 127.0.0.1 11003
 4 127.0.0.1 11004
 5 127.0.0.1 11005
-1 4 5
-2 1
-3 1 2
-4
-5" > membership
+1 3
+2 1 4
+3  
+4 1 3
+5 4" > membership
 
 # start 5 processes, each broadcasting 100 messages
 for i in `seq 1 5`
 do
-    java Da_proc $i membership 100 &
+    java Da_proc $i membership 50 &
     da_proc_id[$i]=$!
 done
 
@@ -68,6 +68,6 @@ do
 done
 
 # check logs for correctness
-./check_output.sh 1 3 5
+./check_output.sh 1 2 3 4 5
 
 echo "Correctness test done."

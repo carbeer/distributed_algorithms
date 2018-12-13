@@ -60,6 +60,7 @@ public class PerfectSend extends Thread {
 
 			if (FIFOBroadcast.startBroadcast) {
 				// Send a packet containing the data of the message to send to all peers
+//
 				for (Peer peer : this.peers) {
 					DatagramPacket packet = new DatagramPacket(sendBuffer, sendBuffer.length, peer.inetAddress, peer.port);
 					try {
@@ -78,9 +79,9 @@ public class PerfectSend extends Thread {
 				}
 
 				if (this.firstRun) {
-					if (message.getOrigin() == FIFOBroadcast.id) {
-						Process.writeLogLine("b " + message.getSn());
-					}
+					//if (message.getOrigin() == FIFOBroadcast.id) {
+					//	Process.writeLogLine("b " + message.getSn() + "\n" + message.getMessageContent());
+					//}
 					FIFOBroadcast.addAck(message);
 					
 					this.firstRun = false;
