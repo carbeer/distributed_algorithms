@@ -90,9 +90,10 @@ public class FIFOBroadcast extends Process {
 
 	/**
 	 * Method that checks whether messages passed in argument can be delivered, and
-	 * deliver the ones that can be. This method implements majority ack logic that
-	 * if a majority of processes acknowledged a message, then it can be delivered.
-	 * 
+	 * deliver the ones that can be. This method implements:
+	 * 1) Majority ack logic that if a majority of processes 
+	 * acknowledged a message, then it can be delivered.
+	 * 2) Localized Causal Broadcast that uses dependencies (tryToDeliverPast)
 	 * @param pq : priority queue of messages to acknowledge
 	 */
 	public synchronized void tryToDeliver(PriorityQueue<Message> pq) {
