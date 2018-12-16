@@ -90,9 +90,10 @@ public class FIFOBroadcast extends Process {
 
 	/**
 	 * Method that checks whether messages passed in argument can be delivered, and
-	 * deliver the ones that can be. This method implements majority ack logic that
-	 * if a majority of processes acknowledged a message, then it can be delivered.
-	 * 
+	 * deliver the ones that can be. This method implements:
+	 * 1) Majority ack logic that if a majority of processes 
+	 * acknowledged a message, then it can be delivered.
+	 * 2) Localized Causal Broadcast that uses dependencies (tryToDeliverPast)
 	 * @param pq : priority queue of messages to acknowledge
 	 */
 	public synchronized void tryToDeliver(PriorityQueue<Message> pq) {
@@ -254,24 +255,11 @@ public class FIFOBroadcast extends Process {
 		
 		// find the process dependancies and the latest message delivered for those dependencies
 		// like a vector clock
-		// Say th process depends on proc 2 and 4, and the latest messages delivered are those
-		// 2 dummies message dependancies 
-	
-		// processdependancy1 = Message(2, 32);
-		// processdependancy2 = Message(4, 21);
-		// dependencies.add(processdependancy1);
-		// dependencies.add(processdependancy2);
-
-		//if (id==1){
-		//System.out.println(" yoloing"+fifoNext.get(5)+" \n");
-		//}
+		
 
 		if (!process_dependencies.isEmpty()){
 			ArrayList<Message> dependencies = new ArrayList<Message>();
 
-			//if(FIFOBroadcast.id==1){
-			//System.out.print("fr " +fifoNext.get(5) +"\n" );
-			//}
 
 			for(int proc_dep : process_dependencies){
 				if (fifoNext.get(proc_dep)>1){
