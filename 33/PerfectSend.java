@@ -48,9 +48,6 @@ public class PerfectSend extends Thread {
 		// Format the data to be sent and extract it from the Message data structure
 		message.setPeerID(FIFOBroadcast.id);
 
-		//if (FIFOBroadcast.id==1){
-		//	System.out.println(" process 1 sending: "+message.getMessageContent()+"\n");
-		//}
 
 		sendBuffer = message.getMessageContent().getBytes();
 
@@ -79,9 +76,7 @@ public class PerfectSend extends Thread {
 				}
 
 				if (this.firstRun) {
-					//if (message.getOrigin() == FIFOBroadcast.id) {
-					//	Process.writeLogLine("b " + message.getSn() + "\n" + message.getMessageContent());
-					//}
+					
 					FIFOBroadcast.addAck(message);
 					
 					this.firstRun = false;

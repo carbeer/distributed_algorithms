@@ -57,7 +57,9 @@ public class Process {
 
 		// Reads the membership file and gather information about the processes
 		File membershipPath = new File(System.getProperty("user.dir") + File.separator + membership);
+		//Keep track of nodes in the network 
 		this.peers = readMembership(membershipPath, id);
+		//Save dependencies of id process 
 		this.process_dependencies = readDependencies(membershipPath, id);
 		this.ip = peers.get(0).address;
 		this.port = Integer.valueOf(peers.get(0).port);
@@ -79,19 +81,21 @@ public class Process {
 		}
 
 		// Signal handlers
+		//SIGNAL USR2 to start broadcasting messages
 		Signal.handle(new Signal("USR2"), new SignalHandler() {
 			public void handle(Signal sig) {
 				LOGGER.log(Level.INFO, "Process " + id + " Received USR2 signal. Starting the broadcast.");
 				startBroadcast = true;
 			}
 		});
-
+		
+		//SIGNAL INT to make the process crash
 		Signal.handle(new Signal("INT"), new SignalHandler() {
 			public void handle(Signal sig) {
 				crash();
 			}
 		});
-
+		//SIGNAL TERM to make the process crash
 		Signal.handle(new Signal("TERM"), new SignalHandler() {
 			public void handle(Signal sig) {
 				crash();
