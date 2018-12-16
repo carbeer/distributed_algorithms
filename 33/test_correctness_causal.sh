@@ -34,7 +34,7 @@ echo "5
 # start 5 processes, each broadcasting 100 messages
 for i in `seq 1 5`
 do
-    java Da_proc $i membership 70 &
+    java Da_proc $i membership 100 &
     da_proc_id[$i]=$!
 done
 

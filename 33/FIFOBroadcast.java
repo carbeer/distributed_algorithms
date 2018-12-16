@@ -81,7 +81,7 @@ public class FIFOBroadcast extends Process {
 	 */
 	public static void broadcast(Message msg) {
 		if (msg.getOrigin() == FIFOBroadcast.id) {
-			Process.writeLogLine("b " + msg.getSn() + "\n" + msg.getMessageContent());
+			Process.writeLogLine("b " + msg.getSn());
 		}
 		
 		PerfectSend thread = new PerfectSend(msg, getPeers(), getSocket());
