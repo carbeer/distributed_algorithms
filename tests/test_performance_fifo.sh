@@ -13,7 +13,7 @@ time_to_finish=4
 init_time=2
 
 # compile (should output: Da_proc.class)
-make
+make -C ..
 
 echo "10
 1 127.0.0.1 11001
@@ -25,12 +25,12 @@ echo "10
 7 127.0.0.1 11007
 8 127.0.0.1 11008
 9 127.0.0.1 11009
-10 127.0.0.1 11010" > membership
+10 127.0.0.1 11010" > ../config/membership
 
 #start 5 processes, each broadcasting 1000 messages
 for i in `seq 1 10`
 do
-    java Da_proc $i membership 1000 &
+    java -cp .. Da_proc $i ../config/membership 1000 &
     da_proc_id[$i]=$!
 done
 

@@ -1,4 +1,5 @@
-JAVA_FILES:=$(wildcard *.java)
+SRC:=./src/
+JAVA_FILES:=$(wildcard $(SRC)*.java)
 JVM=java
 #
 # the rest is independent of the directory
@@ -11,7 +12,7 @@ MAIN:=Da_proc
 LIST:=
 
 classes: $(JAVA_CLASSES)
-		javac -Xlint:none -d ${COMPILED_TARGET} $(LIST) ;
+		javac -Xlint:none -d ${COMPILED_TARGET} -cp $(SRC) $(LIST) ;
 
 $(JAVA_CLASSES) : %.class : %.java
 	$(eval LIST+=$$<)
@@ -24,3 +25,4 @@ clean:
 	rm -rf daProc
 	rm -rf utils
 	rm -rf *.out
+	rm -rf ./tests/*.out
